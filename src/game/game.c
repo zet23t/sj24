@@ -4,7 +4,7 @@
 #include "components/camera_component.h"
 #include "components/playmap_component.h"
 #include "components/TileMapComponent.h"
-#include "components/SpritesheetAnimationManager.h"
+#include "components/AnimationManager.h"
 #include <rlgl.h>
 #undef DEFINITIONS
 
@@ -27,9 +27,9 @@ static void spawnSeagull(SceneGraph *g, Vector3 position)
                                 .pivot = (Vector2){0.5f, 6.0f/8.0f},
                                 .pixelsPerUnit = 16,
                             });
-    SpritesheetAnimationManager* mgr = SpritesheetAnimationManager_getInstance(g);
-    SceneGraph_addComponent(g, seagull, _componentIdMap.SpritesheetAnimatorComponentId, &(SpritesheetAnimatorComponent){
-        .animationId = SpritesheetAnimationManager_getAnimation(mgr, "assets/seagull_animation.anim"),
+    AnimationManager* mgr = AnimationManager_getInstance(g);
+    SceneGraph_addComponent(g, seagull, _componentIdMap.AnimatorComponentId, &(AnimatorComponent){
+        .animationId = AnimationManager_getAnimation(mgr, "assets/seagull_animation.anim"),
         .animationName = "idle",
         .currentTime = 0,
         .loopCount = 0,
