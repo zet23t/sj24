@@ -10,12 +10,17 @@
     "clips": [
         {
             "name": "idle",
-            "duration": 1,
+            "duration": 2,
             "tracks": {
                 "#SpriteRendererComponent.spriteAsset.source.x":{
-                    "time": [0, 0.5],
-                    "value": [0, 8]
+                    "time": [0, 0.8, 1.5],
+                    "value": [0, 8, 0]
+                },
+                "#SpriteRendererComponent.spriteAsset.source.y":{
+                    "time": [0, 0.8, 1.5],
+                    "value": [656, 656, 663]
                 }
+
             }
         }
     ]

@@ -214,7 +214,7 @@ AnimationId AnimationManager_getAnimation(AnimationManager *manager, char *filen
     animation->clips_count = 0;
     animation->clips = NULL;
     animation->clips_capacity = 0;
-    animation->lastModifiedTime = GetFileModTime(filename);
+    animation->lastModifiedTime = ResourceManager_getModHash(_resourceManager, filename);
     animation->filename = filename;
     animation->generation = ++manager->generationCounter;
     Animation_load(animation);
@@ -246,8 +246,9 @@ static void AnimationManager_update(SceneObject *sceneObject, SceneComponentId S
     for (int i = 0; i < component->animations_count; i++)
     {
         Animation *animation = &component->animations[i];
-        long modTime = GetFileModTime(animation->filename);
-        if (modTime > animation->lastModifiedTime)
+        
+        int modTime = ResourceManager_getModHash(_resourceManager, animation->filename);
+        if (modTime != animation->lastModifiedTime)
         {
             animation->lastModifiedTime = modTime;
             Animation_load(animation);

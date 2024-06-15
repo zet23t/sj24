@@ -24,7 +24,7 @@ SERIALIZABLE_STRUCT_END(AnimationClip)
 
 SERIALIZABLE_STRUCT_START(Animation)
     SERIALIZABLE_CSTR(filename)
-    NONSERIALIZED_FIELD(long, lastModifiedTime)
+    NONSERIALIZED_FIELD(int, lastModifiedTime)
     SERIALIZABLE_FIELD(int, generation)
     SERIALIZABLE_STRUCT_LIST_ELEMENT(AnimationClip, clips)
 SERIALIZABLE_STRUCT_END(Animation)
