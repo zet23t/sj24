@@ -8,6 +8,7 @@
 #include "shared/ui/dusk-gui.c"
 #include "shared/serialization/serializable_structs.h"
 #include "shared/serialization/serializers.c"
+#include "shared/serialization/reflection.c"
 #include "shared/editor/editor_styles.c"
 #include "shared/editor/editor.c"
 #include "shared/util/arena.c"

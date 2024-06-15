@@ -2,33 +2,21 @@
     "states": [
         {
             "name": "idle",
-            "sequence": ["idle"]
+            "sequence": [
+                "idle"
+            ]
         }
     ],
     "clips": [
         {
             "name": "idle",
             "duration": 1,
-            "targets": [
-                {
-                    "path": "",
-                    "name": "Source",
-                    "component": "SpriteRendererComponent",
-                    "key": ["spriteAsset", "source"]
+            "tracks": {
+                "#SpriteRendererComponent.spriteAsset.source.x":{
+                    "time": [0, 0.5],
+                    "value": [0, 8]
                 }
-            ],
-            "keys": [
-                {
-                    "time": 0,
-                    "target": "Source",
-                    "values": {"x":0, "y":656, "width":8, "height":8}
-                },
-                {
-                    "time": 0.5,
-                    "target": "Source",
-                    "values": {"x":8, "y":656, "width":8, "height":8}
-                }
-            ]
+            }
         }
     ]
 }
