@@ -55,6 +55,74 @@ void AnimationClip_cleanup(AnimationClip *clip)
     }
 }
 
+void AnimationState_cleanup(AnimationState *state)
+{
+    if (state->name)
+    {
+        RL_FREE(state->name);
+    }
+
+    if (state->clipSequence != NULL)
+    {
+        if (state->clipSequence)
+            RL_FREE(state->clipSequence);
+        state->clipSequence = NULL;
+        state->clipSequence_capacity = state->clipSequence_count = 0;
+    }
+
+    if (state->transitions != NULL)
+    {
+        for (int i = 0; i < state->transitions_count; i++)
+        {
+            AnimationStateTransition *transition = &state->transitions[i];
+            for (int j = 0; j < transition->conditions_count; j++)
+            {
+                AnimationCondition *condition = &transition->conditions[j];
+                if (condition->varA)
+                {
+                    RL_FREE(condition->varA);
+                }
+                if (condition->varB)
+                {
+                    RL_FREE(condition->varB);
+                }
+                if (condition->operation)
+                {
+                    RL_FREE(condition->operation);
+                }
+            }
+        }
+        state->transitions_capacity = state->transitions_count = 0;
+        if (state->transitions)
+            RL_FREE(state->transitions);
+        state->transitions = NULL;
+    }
+}
+
+void AnimationVariable_cleanup(AnimationVariable *variable)
+{
+    if (variable->name)
+    {
+        RL_FREE(variable->name);
+    }
+}
+
+void AnimationCondition_cleanup(AnimationCondition *condition)
+{
+    if (condition->varA)
+    {
+        RL_FREE(condition->varA);
+    }
+    if (condition->varB)
+    {
+        RL_FREE(condition->varB);
+    }
+    if (condition->operation)
+    {
+        RL_FREE(condition->operation);
+    }
+}
+
 void Animation_cleanup(Animation *animation)
 {
     if (animation->clips_count > 0)
@@ -67,6 +135,30 @@ void Animation_cleanup(Animation *animation)
         if (animation->clips)
             RL_FREE(animation->clips);
         animation->clips = NULL;
+    }
+
+    if (animation->states_count > 0)
+    {
+        for (int i = 0; i < animation->states_count; i++)
+        {
+            AnimationState_cleanup(&animation->states[i]);
+        }
+        animation->states_capacity = animation->states_count = 0;
+        if (animation->states)
+            RL_FREE(animation->states);
+        animation->states = NULL;
+    }
+
+    if (animation->variables_count > 0)
+    {
+        for (int i = 0; i < animation->variables_count; i++)
+        {
+            AnimationVariable_cleanup(&animation->variables[i]);
+        }
+        animation->variables_capacity = animation->variables_count = 0;
+        if (animation->variables)
+            RL_FREE(animation->variables);
+        animation->variables = NULL;
     }
 }
 
@@ -185,6 +277,62 @@ void Animation_load(Animation *animation)
     }
 
     animation->clips_count = clipCount;
+
+    int stateCount = cJSON_GetArraySize(states);
+    if (stateCount > animation->states_capacity)
+    {
+        animation->states_capacity = stateCount;
+        animation->states = (AnimationState *)RL_REALLOC(animation->states, sizeof(AnimationState) * animation->states_capacity);
+    }
+
+    for (int i = 0; i < stateCount; i++)
+    {
+        cJSON *state = cJSON_GetArrayItem(states, i);
+        GET_STRING(state, name);
+        GET_ARRAY(state, sequence);
+        GET_ARRAY(state, transitions);
+        int clipSequenceCount = cJSON_GetArraySize(sequence);
+        int transitionsCount = cJSON_GetArraySize(transitions);
+        AnimationState animationState = {
+            .name = RL_STRDUP(name),
+            .clipSequence = RL_MALLOC(sizeof(int) * clipSequenceCount),
+            .clipSequence_capacity = clipSequenceCount,
+            .transitions = RL_MALLOC(sizeof(AnimationCondition) * transitionsCount),
+            .transitions_capacity = transitionsCount,
+        };
+        animation->states[i] = animationState;
+
+        // animation->states[i].transitions_count = transitionsCount;
+
+        for (int j = 0; j < clipSequenceCount; j++)
+        {
+            cJSON *clipElement = cJSON_GetArrayItem(sequence, j);
+            if (!cJSON_IsString(clipElement))
+            {
+                TraceLog(LOG_ERROR, "Failed to load Animation: %s (%d)", animation->filename, __LINE__);
+                goto error;
+            }
+            const char *clipName = clipElement->valuestring;
+            int clipIndex = -1;
+            for (int k = 0; k < animation->clips_count; k++)
+            {
+                if (strcmp(animation->clips[k].name, clipName) == 0)
+                {
+                    clipIndex = k;
+                    break;
+                }
+            }
+            if (clipIndex == -1)
+            {
+                TraceLog(LOG_ERROR, "Unknown clipname %s to load Animation: %s (%d)", clipName, animation->filename, __LINE__);
+                goto error;
+            }
+            animation->states[i].clipSequence[j] = clipIndex;
+            animation->states[i].clipSequence_count = j + 1;
+        }
+    }
+
+    animation->states_count = stateCount;
 
     printf("Loaded Spritesheet Animation: %s\n", animation->filename);
 

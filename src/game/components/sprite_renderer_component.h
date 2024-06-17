@@ -15,6 +15,7 @@ SERIALIZABLE_STRUCT_START(SpriteRendererComponent)
     SERIALIZABLE_FIELD(Vector2, pivot)
     SERIALIZABLE_FIELD(float, pixelsPerUnit)
     SERIALIZABLE_FIELD(Vector2, size)
+    SERIALIZABLE_FIELD(Vector2, flip)
 SERIALIZABLE_STRUCT_END(SpriteRendererComponent)
 #elif defined(COMPONENT_IMPLEMENTATION)
 

@@ -1,24 +1,67 @@
 {
+    "variables": {
+        "flyHeight": {"type": "float", "value": 0.0 }
+    },
     "states": [
         {
             "name": "idle",
-            "sequence": [
-                "idle"
+            "sequence": [ "idle" ],
+            "transitions": [
+                {
+                    "target": "flying",
+                    "conditions": [
+                        {
+                            "a": "flyHeight",
+                            "b": "0.25",
+                            "condition": ">"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "flying",
+            "sequence": [ "flying" ],
+            "transitions": [
+                {
+                    "target": "idle",
+                    "conditions": [
+                        {
+                            "a": "flyHeight",
+                            "b": "0.25",
+                            "condition": "<="
+                        }
+                    ]
+                }
             ]
         }
     ],
     "clips": [
         {
-            "name": "idle",
-            "duration": 2,
+            "name": "flying",
+            "duration": 0.3,
             "tracks": {
                 "#SpriteRendererComponent.spriteAsset.source.x":{
-                    "time": [0, 0.8, 1.5],
-                    "value": [0, 8, 0]
-                },
-                "#SpriteRendererComponent.spriteAsset.source.y":{
-                    "time": [0, 0.8, 1.5],
-                    "value": [656, 656, 663]
+                    "time": [
+                        0, 0.15
+                    ],
+                    "value": [
+                        48, 56
+                    ]
+                }
+            }
+        },
+        {
+            "name": "idle",
+            "duration": 3.8,
+            "tracks": {
+                "#SpriteRendererComponent.spriteAsset.source.x":{
+                    "time": [
+                        0, 0.8, 1.5, 2,
+                        2.5,3, 3.3],
+                    "value": [
+                        0, 8, 0, 16, 
+                        8, 24, 8]
                 }
 
             }

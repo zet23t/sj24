@@ -29,6 +29,8 @@ static void SpriteRendererComponent_sequentialDraw(Camera3D camera, SceneObject 
     if (spriteRenderer->spriteAsset.scale9frame.x == 0 && spriteRenderer->spriteAsset.scale9frame.y == 0 &&
         spriteRenderer->spriteAsset.scale9frame.z == 0 && spriteRenderer->spriteAsset.scale9frame.w == 0)
     {
+        float fx = spriteRenderer->flip.x;
+        float fy = spriteRenderer->flip.y;
         Vector3 v0 = (Vector3){p.x + r.x * w + u.x * h, p.y + r.y * w + u.y * h, p.z + r.z * w + u.z * h};
         Vector3 t0 = (Vector3){(source.x) / width, (source.y) / height};
         Vector3 v1 = (Vector3){p.x - r.x * w + u.x * h, p.y - r.y * w + u.y * h, p.z - r.z * w + u.z * h};
@@ -37,7 +39,24 @@ static void SpriteRendererComponent_sequentialDraw(Camera3D camera, SceneObject 
         Vector3 t2 = (Vector3){(source.x + source.width) / width, (source.y + source.height) / height};
         Vector3 v3 = (Vector3){p.x + r.x * w - u.x * h, p.y + r.y * w - u.y * h, p.z + r.z * w - u.z * h};
         Vector3 t3 = (Vector3){(source.x) / width, (source.y + source.height) / height};
+        if (fx < 0.0f) {
+            Vector3 tmp = t0;
+            t0 = t1;
+            t1 = tmp;
+            tmp = t2;
+            t2 = t3;
+            t3 = tmp;
+        }
 
+        if (fy < 0.0f) {
+            Vector3 tmp = t2;
+            t2 = t3;
+            t3 = tmp;
+
+            tmp = t0;
+            t0 = t1;
+            t1 = tmp;
+        }
 #define P(XY) rlTexCoord2f(t##XY.x, t##XY.y), rlVertex3f(v##XY.x, v##XY.y, v##XY.z);
         P(0)
         P(3)

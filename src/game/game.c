@@ -26,12 +26,13 @@ static void spawnSeagull(SceneGraph *g, Vector3 position)
                                 .tint = WHITE,
                                 .pivot = (Vector2){0.5f, 6.0f/8.0f},
                                 .pixelsPerUnit = 16,
+                                .flip.x = GetRandomValue(0, 1) * 2.0f - 1.0f,
                             });
     AnimationManager* mgr = AnimationManager_getInstance(g);
     SceneGraph_addComponent(g, seagull, _componentIdMap.AnimatorComponentId, &(AnimatorComponent){
         .animationId = AnimationManager_getAnimation(mgr, "assets/seagull_animation.anim"),
         .animationName = "idle",
-        .currentTime = 0,
+        .currentTime = GetRandomValue(0, 10000) * 0.0005f,
         .loopCount = 0,
     });
     // SceneGraph_addComponent(g, seagull, _componentIdMap.PrimitiveRendererComponentId, &(PrimitiveRendererComponent){
@@ -107,8 +108,16 @@ static void trySpawnTree(SceneGraph *g, int x, int y, int type, float value, Vec
 
 static void trySpawnBeach(SceneGraph *g, int x, int y, int type, float value, Vector2 position)
 {
-    if (type != 3 || GetRandomValue(0, 100) > 20 + (value-BEACH_START)/(BEACH_END-BEACH_START) * 50.0f)
+    if (type != 3)
     {
+        return;
+    }
+    else if (GetRandomValue(0, 100) > 20 + (value-BEACH_START)/(BEACH_END-BEACH_START) * 50.0f)
+    {
+        // if (GetRandomValue(0,100) > 90)
+        {
+            // spawnSeagull(g, (Vector3){position.x, position.y + 0.5f, 0.1f});
+        }
         return;
     }
     SceneObjectId plant = SceneGraph_createObject(g, "beach");
@@ -269,6 +278,7 @@ void start_gameScene(SceneGraph *g)
                                     .near = 1.0f,
                                     .far = 64.0f,
                                 }});
+    spawnSeagull(g, (Vector3){25.0f, 0.0f, 0.1f});    
 
     for (int y = map.height - 1; y > 0; y--)
     for (int x = 0; x < map.width; x++)
@@ -289,7 +299,9 @@ void start_gameScene(SceneGraph *g)
         trySpawnBeach(g, x, y, type, value, position);
     }
 
-    spawnSeagull(g, (Vector3){5, 0, 0.1f});
+
+    int animatorCount = SceneGraph_getComponentType(_scene, _componentIdMap.AnimatorComponentId)->components_count;
+    printf("Animator count: %d\n", animatorCount);
 }
 
 #define COMPONENT(T) void T##_register(SceneGraph *scene);
