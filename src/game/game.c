@@ -4,7 +4,6 @@
 #include "components/camera_component.h"
 #include "components/playmap_component.h"
 #include "components/TileMapComponent.h"
-#include "components/AnimationManager.h"
 #include <rlgl.h>
 #undef DEFINITIONS
 

@@ -15,6 +15,9 @@
 
 #include "game/g.c"
 
+#include "game/components/AnimationManager.c"
+#include "game/components/AnimatorComponent.c"
+#include "game/components/SeagullBehaviorComponent.c"
 
 #define COMPONENT_IMPLEMENTATION
 #include "game/component_list.h"

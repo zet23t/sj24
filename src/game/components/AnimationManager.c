@@ -1,9 +1,7 @@
-#include "raylib.h"
-#include "rlgl.h"
-#include "../g.h"
-#include "shared/scene_graph/scene_graph.h"
-#include "shared/resource_manager.h"
+#include "game/Components.h"
+
 #include <external/cjson.h>
+
 
 AnimationManager *AnimationManager_getInstance(SceneGraph *sceneGraph)
 {

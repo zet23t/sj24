@@ -1,9 +1,10 @@
+#include "game/Components.h"
+
 #define DEFINITIONS
 #include "raylib.h"
 #include "rlgl.h"
-#include "../g.h"
+#include "game/g.h"
 #include "shared/scene_graph/scene_graph.h"
-#include "AnimationManager.h"
 #include "shared/serialization/reflection.h"
 #include "shared/serialization/serializable_structs.h"
 #undef DEFINITIONS

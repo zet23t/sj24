@@ -1,8 +1,8 @@
-#ifdef COMPONENT
-// === COMPONENT UTILITIES ===
-COMPONENT(AnimationManager)
-#elif defined(COMPONENT_DECLARATION)
-// === DECLARATIONS ===
+#ifndef SERIALIZABLE_STRUCT_START
+#include "shared/serialization/struct_macros.h"
+#endif
+
+// AnimationManager
 
 SERIALIZABLE_STRUCT_START(AnimationKey)
     SERIALIZABLE_FIELD(float, time)
@@ -64,15 +64,24 @@ SERIALIZABLE_STRUCT_START(AnimationManager)
     SERIALIZABLE_FIELD(int, generationCounter)
 SERIALIZABLE_STRUCT_END(AnimationManager)
 
-#elif !defined(DEFINITIONS)
+// AnimatorComponent
 
-// === DEFINITIONS ===
-#include "AnimationManager.c"
+SERIALIZABLE_STRUCT_START(AnimatorVariable)
+    SERIALIZABLE_CSTR(name)
+    SERIALIZABLE_FIELD(float, value)
+SERIALIZABLE_STRUCT_END(AnimatorVariable)
 
-#else
+SERIALIZABLE_STRUCT_START(AnimatorComponent)
+    SERIALIZABLE_CSTR(animationName)
+    SERIALIZABLE_FIELD(AnimationId, animationId)
+    SERIALIZABLE_FIELD(int, loopCount)
+    SERIALIZABLE_FIELD(int, currentStateIndex)
+    SERIALIZABLE_FIELD(float, currentTime)
+    SERIALIZABLE_STRUCT_LIST_ELEMENT(AnimatorVariable, variables)
+SERIALIZABLE_STRUCT_END(AnimatorComponent)
 
-AnimationId AnimationManager_getAnimation(AnimationManager *manager, char *filename);
-AnimationManager* AnimationManager_getInstance(SceneGraph *sceneGraph);
-Animation* AnimationManager_getAnimationById(AnimationManager *manager, AnimationId id);
+// SeagullBehaviorComponent
 
-#endif
+SERIALIZABLE_STRUCT_START(SeagullBehaviorComponent)
+    SERIALIZABLE_FIELD(float, flyHeight)
+SERIALIZABLE_STRUCT_END(SeagullBehaviorComponent)
