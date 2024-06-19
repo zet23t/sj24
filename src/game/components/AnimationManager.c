@@ -1,7 +1,6 @@
-#include "game/Components.h"
+#include "game/g.h"
 
 #include <external/cjson.h>
-
 
 AnimationManager *AnimationManager_getInstance(SceneGraph *sceneGraph)
 {
@@ -160,23 +159,6 @@ void Animation_cleanup(Animation *animation)
     }
 }
 
-void Animation_load(Animation *animation)
-{
-    printf("Loading Spritesheet Animation: %s\n", animation->filename);
-
-    char *content = ResourceManager_loadText(_resourceManager, animation->filename);
-    if (content == NULL)
-    {
-        TraceLog(LOG_ERROR, "Failed to load Spritesheet Animation: %s", animation->filename);
-        return;
-    }
-
-    cJSON *root = cJSON_Parse(content);
-    if (root == NULL)
-    {
-        TraceLog(LOG_ERROR, "Failed to load Animation: %s (%d)", animation->filename, __LINE__);
-        goto error;
-    }
 
 #define GET_ARRAY(obj, name)                                                                     \
     cJSON *name = cJSON_GetObjectItem(obj, #name);                                               \
@@ -212,8 +194,44 @@ void Animation_load(Animation *animation)
     }                                                                                            \
     float name = (float)floatElement##name->valuedouble;
 
-    GET_ARRAY(root, clips);
-    GET_ARRAY(root, states);
+static int Animation_loadVariables(Animation *animation, cJSON *variables)
+{
+    int variableCount = cJSON_GetArraySize(variables);
+    if (variableCount > animation->variables_capacity)
+    {
+        animation->variables = (AnimationVariable *)RL_REALLOC(animation->variables, sizeof(AnimationVariable) * variableCount);
+        for (int j=animation->variables_count;j<variableCount;j++)
+        {
+            animation->variables[j] = (AnimationVariable){
+                .name = NULL,
+                .value = 0,
+            };
+        }
+        animation->variables_capacity = variableCount;
+    }
+
+    animation->variables_count = 0;
+
+    for (int i = 0; i < variableCount; i++)
+    {
+        cJSON *variable = cJSON_GetArrayItem(variables, i);
+        GET_FLOAT(variable, value);
+        animation->variables[i] = (AnimationVariable){
+            .name = RL_STRDUP(variable->string),
+            .value = value,
+        };
+        animation->variables_count++;
+    }
+
+    return 0;
+
+    error: 
+    return 1;
+}
+
+static int Animation_loadClips(Animation* animation, cJSON* clips)
+{
+    
     int clipCount = cJSON_GetArraySize(clips);
     if (clipCount > animation->clips_capacity)
     {
@@ -276,6 +294,13 @@ void Animation_load(Animation *animation)
 
     animation->clips_count = clipCount;
 
+    return 0;
+    error:
+    return 1;
+}
+
+static int Animation_loadStates(Animation *animation, cJSON *states)
+{
     int stateCount = cJSON_GetArraySize(states);
     if (stateCount > animation->states_capacity)
     {
@@ -328,22 +353,91 @@ void Animation_load(Animation *animation)
             animation->states[i].clipSequence[j] = clipIndex;
             animation->states[i].clipSequence_count = j + 1;
         }
+
+        for (int j = 0; j < transitionsCount; j++)
+        {
+            cJSON *transition = cJSON_GetArrayItem(transitions, j);
+            GET_STRING(transition, target);
+            GET_ARRAY(transition, conditions);
+            int conditionsCount = cJSON_GetArraySize(conditions);
+            AnimationStateTransition animationTransition = {
+                .target = RL_STRDUP(target),
+                .conditions = RL_MALLOC(sizeof(AnimationCondition) * conditionsCount),
+                .conditions_capacity = conditionsCount,
+            };
+            for (int k = 0; k < conditionsCount; k++)
+            {
+                animationTransition.conditions[k] = (AnimationCondition){
+                    .varA = NULL,
+                    .varB = NULL,
+                };
+            }
+            animation->states[i].transitions[j] = animationTransition;
+
+            for (int k = 0; k < conditionsCount; k++)
+            {
+                
+            }
+        }
     }
 
     animation->states_count = stateCount;
 
+    return 0;
+    error:
+    return 1;
+}
+
+void Animation_load(Animation *animation)
+{
+    printf("Loading Spritesheet Animation: %s\n", animation->filename);
+
+    char *content = ResourceManager_loadText(_resourceManager, animation->filename);
+    if (content == NULL)
+    {
+        TraceLog(LOG_ERROR, "Failed to load Spritesheet Animation: %s", animation->filename);
+        return;
+    }
+
+    cJSON *root = cJSON_Parse(content);
+    if (root == NULL)
+    {
+        TraceLog(LOG_ERROR, "Failed to load Animation: %s (%d)", animation->filename, __LINE__);
+        goto error;
+    }
+
+    GET_ARRAY(root, clips);
+    GET_ARRAY(root, states);
+    GET_OBJECT(root, variables);
+
+    if (Animation_loadVariables(animation, variables) != 0)
+    {
+        goto error;
+    }
+
+    if (Animation_loadClips(animation, clips) != 0)
+    {
+        goto error;
+    }
+
+    if (Animation_loadStates(animation, states) != 0)
+    {
+        goto error;
+    }
+
     printf("Loaded Spritesheet Animation: %s\n", animation->filename);
 
     goto cleanup;
-#undef GET_ARRAY
-#undef GET_STRING
-#undef GET_FLOAT
 
 error:
     Animation_cleanup(animation);
 cleanup:
     cJSON_Delete(root);
 }
+
+#undef GET_ARRAY
+#undef GET_STRING
+#undef GET_FLOAT
 
 STRUCT_LIST_ACQUIRE_FN(AnimationManager, Animation, animations)
 

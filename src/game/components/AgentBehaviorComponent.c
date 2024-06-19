@@ -1,6 +1,7 @@
+#include "game/g.h"
+
 #include "raylib.h"
 #include "rlgl.h"
-#include "../g.h"
 
 
 

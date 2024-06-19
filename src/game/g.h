@@ -7,6 +7,7 @@
 #include <string.h>
 #include <raylib.h>
 #include <raymath.h>
+#include "game/Components.h"
 #include "shared/resource_manager.h"
 #include "shared/touch_util.h"
 #include "shared/ui/dusk-gui.h"
