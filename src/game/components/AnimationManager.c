@@ -1,5 +1,5 @@
 #include "game/g.h"
-
+#include "AnimationConditions.h"
 #include <external/cjson.h>
 
 AnimationManager *AnimationManager_getInstance(SceneGraph *sceneGraph)
@@ -69,26 +69,6 @@ void AnimationState_cleanup(AnimationState *state)
 
     if (state->transitions != NULL)
     {
-        for (int i = 0; i < state->transitions_count; i++)
-        {
-            AnimationStateTransition *transition = &state->transitions[i];
-            for (int j = 0; j < transition->conditions_count; j++)
-            {
-                AnimationCondition *condition = &transition->conditions[j];
-                if (condition->varA)
-                {
-                    RL_FREE(condition->varA);
-                }
-                if (condition->varB)
-                {
-                    RL_FREE(condition->varB);
-                }
-                if (condition->operation)
-                {
-                    RL_FREE(condition->operation);
-                }
-            }
-        }
         state->transitions_capacity = state->transitions_count = 0;
         if (state->transitions)
             RL_FREE(state->transitions);
@@ -101,22 +81,6 @@ void AnimationVariable_cleanup(AnimationVariable *variable)
     if (variable->name)
     {
         RL_FREE(variable->name);
-    }
-}
-
-void AnimationCondition_cleanup(AnimationCondition *condition)
-{
-    if (condition->varA)
-    {
-        RL_FREE(condition->varA);
-    }
-    if (condition->varB)
-    {
-        RL_FREE(condition->varB);
-    }
-    if (condition->operation)
-    {
-        RL_FREE(condition->operation);
     }
 }
 
@@ -299,6 +263,57 @@ static int Animation_loadClips(Animation* animation, cJSON* clips)
     return 1;
 }
 
+const char* cJSON_TypeName(int type)
+{
+    switch (type)
+    {
+    case cJSON_False:
+        return "False";
+    case cJSON_True:
+        return "True";
+    case cJSON_NULL:
+        return "NULL";
+    case cJSON_Number:
+        return "Number";
+    case cJSON_String:
+        return "String";
+    case cJSON_Array:
+        return "Array";
+    case cJSON_Object:
+        return "Object";
+    case cJSON_Raw:
+        return "Raw";
+    default:
+        return "Unknown";
+    }
+}
+
+int Animation_parseCondition(Animation *animation, float *varValue, int *varIndex, cJSON* var)
+{
+    if (cJSON_IsNumber(var))
+    {
+        *varValue = (float)var->valuedouble;
+        *varIndex = -1;
+        return 0;
+    }
+    else if (cJSON_IsString(var))
+    {
+        for (int l = 0; l < animation->variables_count; l++)
+        {
+            if (strcmp(animation->variables[l].name, var->valuestring) == 0)
+            {
+                *varIndex = l;
+                return 0;
+            }
+        }
+        TraceLog(LOG_ERROR, "Error in %s: Unknown variable %s (%d)", animation->filename, var->valuestring, __LINE__);
+        return 1;
+    }
+
+    TraceLog(LOG_ERROR, "Error in %s: Invalid type for .%s: %s (%d)", animation->filename, var->string, cJSON_TypeName(var->type), __LINE__);
+    return 1;
+}
+
 static int Animation_loadStates(Animation *animation, cJSON *states)
 {
     int stateCount = cJSON_GetArraySize(states);
@@ -361,23 +376,73 @@ static int Animation_loadStates(Animation *animation, cJSON *states)
             GET_ARRAY(transition, conditions);
             int conditionsCount = cJSON_GetArraySize(conditions);
             AnimationStateTransition animationTransition = {
-                .target = RL_STRDUP(target),
+                .target = 0,
                 .conditions = RL_MALLOC(sizeof(AnimationCondition) * conditionsCount),
                 .conditions_capacity = conditionsCount,
+                .conditions_count = conditionsCount,
             };
-            for (int k = 0; k < conditionsCount; k++)
-            {
-                animationTransition.conditions[k] = (AnimationCondition){
-                    .varA = NULL,
-                    .varB = NULL,
-                };
-            }
-            animation->states[i].transitions[j] = animationTransition;
 
+            for (int k = 0; k < stateCount; k++)
+            {
+                cJSON *stateElement = cJSON_GetArrayItem(states, k);
+                GET_STRING(stateElement, name);
+                if (strcmp(name, target) == 0)
+                {
+                    animationTransition.target = k;
+                    break;
+                }
+            }
+            
             for (int k = 0; k < conditionsCount; k++)
             {
-                
+                cJSON *conditionElement = cJSON_GetArrayItem(conditions, k);
+                GET_STRING(conditionElement, condition);
+                cJSON *varAElement = cJSON_GetObjectItem(conditionElement, "a");
+                cJSON *varBElement = cJSON_GetObjectItem(conditionElement, "b");
+                animationTransition.conditions[k].varA = -1;
+                animationTransition.conditions[k].varB = -1;
+                if (Animation_parseCondition(animation, &animationTransition.conditions[k].valueA, &animationTransition.conditions[k].varA, varAElement) != 0)
+                {
+                    goto error;
+                }
+                if (Animation_parseCondition(animation, &animationTransition.conditions[k].valueB, &animationTransition.conditions[k].varB, varBElement) != 0)
+                {
+                    goto error;
+                }
+                if (strcmp(condition, "==") == 0)
+                {
+                    animationTransition.conditions[k].operation = ANIMATION_CONDITION_TYPE_EQUALS;
+                }
+                else if (strcmp(condition, "!=") == 0)
+                {
+                    animationTransition.conditions[k].operation = ANIMATION_CONDITION_TYPE_NOT_EQUALS;
+                }
+                else if (strcmp(condition, ">") == 0)
+                {
+                    animationTransition.conditions[k].operation = ANIMATION_CONDITION_TYPE_GREATER_THAN;
+                }
+                else if (strcmp(condition, "<") == 0)
+                {
+                    animationTransition.conditions[k].operation = ANIMATION_CONDITION_TYPE_LESS_THAN;
+                }
+                else if (strcmp(condition, ">=") == 0)
+                {
+                    animationTransition.conditions[k].operation = ANIMATION_CONDITION_TYPE_GREATER_THAN_OR_EQUALS;
+                }
+                else if (strcmp(condition, "<=") == 0)
+                {
+                    animationTransition.conditions[k].operation = ANIMATION_CONDITION_TYPE_LESS_THAN_OR_EQUALS;
+                }
+                else
+                {
+                    TraceLog(LOG_ERROR, "Error in %s: Invalid operation %s (%d)", animation->filename, condition, __LINE__);
+                    goto error;
+                }
             }
+            
+            animationTransition.conditions_count = conditionsCount;
+            animation->states[i].transitions[j] = animationTransition;
+            animation->states[i].transitions_count = j + 1;
         }
     }
 

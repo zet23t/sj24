@@ -1,3 +1,4 @@
+#include "AnimationConditions.h"
 #include "game/Components.h"
 
 #define DEFINITIONS
@@ -9,16 +10,18 @@
 #include "shared/serialization/serializable_structs.h"
 #undef DEFINITIONS
 
-void AnimatorComponent_getVariableValue(AnimatorComponent *component, const char *name, float *value)
+void AnimatorComponent_getVariableValue(AnimatorComponent *component, Animation *animation, int index, float *value)
 {
-    if (name == NULL) return;
-    for (int i = 0; i < component->variables_count; i++)
+    if (index < 0 || index >= animation->variables_count) return;
+    *value = animation->variables[index].value;
+    const char *name = animation->variables[index].name;
+    
+    for (int i=0;i<component->variables_count;i++)
     {
-        AnimatorVariable *variable = &component->variables[i];
-        if (strcmp(variable->name, name) == 0)
+        if (strcmp(component->variables[i].name, name) == 0)
         {
-            *value = variable->value;
-            return;
+            *value = component->variables[i].value;
+            break;
         }
     }
 }
@@ -55,45 +58,36 @@ void AnimatorComponent_update(SceneObject *sceneObject, SceneComponentId SceneCo
             AnimationCondition *condition = &transition->conditions[j];
             float valueA = condition->valueA;
             float valueB = condition->valueB;
-            AnimatorComponent_getVariableValue(component, condition->varA, &valueA);
-            AnimatorComponent_getVariableValue(component, condition->varB, &valueB);
-            if (strcmp(condition->operation, "==") == 0)
+            AnimatorComponent_getVariableValue(component, animation, condition->varA, &valueA);
+            AnimatorComponent_getVariableValue(component, animation, condition->varB, &valueB);
+            switch (condition->operation)
             {
-                transit = valueA == valueB;
-            }
-            else if (strcmp(condition->operation, "!=") == 0)
-            {
-                transit = valueA != valueB;
-            }
-            else if (strcmp(condition->operation, ">") == 0)
-            {
-                transit = valueA > valueB;
-            }
-            else if (strcmp(condition->operation, "<") == 0)
-            {
-                transit = valueA < valueB;
-            }
-            else if (strcmp(condition->operation, ">=") == 0)
-            {
-                transit = valueA >= valueB;
-            }
-            else if (strcmp(condition->operation, "<=") == 0)
-            {
-                transit = valueA <= valueB;
+                case ANIMATION_CONDITION_TYPE_EQUALS:
+                    transit = valueA == valueB;
+                    break;
+                case ANIMATION_CONDITION_TYPE_NOT_EQUALS:
+                    transit = valueA != valueB;
+                    break;
+                case ANIMATION_CONDITION_TYPE_GREATER_THAN:
+                    transit = valueA > valueB;
+                    break;
+                case ANIMATION_CONDITION_TYPE_LESS_THAN:
+                    transit = valueA < valueB;
+                    break;
+                case ANIMATION_CONDITION_TYPE_GREATER_THAN_OR_EQUALS:    
+                    transit = valueA >= valueB;
+                    break;
+                case ANIMATION_CONDITION_TYPE_LESS_THAN_OR_EQUALS:
+                    transit = valueA <= valueB;
+                    break;
             }
         }
 
-        if (transit)
+        if (transit && transition->target >= 0 && transition->target < animation->states_count)
         {
-            for (int j=0;j<animation->states_count;j++)
-            {
-                if (strcmp(animation->states[j].name, transition->target) == 0)
-                {
-                    component->currentStateIndex = j;
-                    component->currentTime = 0;
-                    break;
-                }
-            }
+            printf("Transitioning from %s to %s\n", state->name, animation->states[transition->target].name);
+            component->currentStateIndex = transition->target;
+            component->currentTime = 0;
         }
     }
     if (state->clipSequence_count == 0)

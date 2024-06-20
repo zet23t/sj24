@@ -1,4 +1,5 @@
 #define DEFINITIONS
+#include "game/Components.h"
 #include "shared/serialization/serializable_structs.h"
 #include "g.h"
 #include "components/camera_component.h"
@@ -28,12 +29,19 @@ static void spawnSeagull(SceneGraph *g, Vector3 position)
                                 .flip.x = GetRandomValue(0, 1) * 2.0f - 1.0f,
                             });
     AnimationManager* mgr = AnimationManager_getInstance(g);
+    AnimatorVariable *variables = MemAlloc(sizeof(AnimatorVariable) * 1);
+    variables[0].name = "flyHeight";
+    variables[0].value = 0.0f;
     SceneGraph_addComponent(g, seagull, _componentIdMap.AnimatorComponentId, &(AnimatorComponent){
         .animationId = AnimationManager_getAnimation(mgr, "assets/seagull_animation.anim"),
         .animationName = "idle",
         .currentTime = GetRandomValue(0, 10000) * 0.0005f,
         .loopCount = 0,
+        .variables_capacity = 1,
+        .variables_count = 1,
+        .variables = variables,
     });
+
     // SceneGraph_addComponent(g, seagull, _componentIdMap.PrimitiveRendererComponentId, &(PrimitiveRendererComponent){
     //     .primitiveType = PRIMITIVE_TYPE_CUBE,
     //     .size = (Vector3){1.0f, 1.0f, 1.0f},
