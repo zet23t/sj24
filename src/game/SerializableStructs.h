@@ -83,7 +83,9 @@ SERIALIZABLE_STRUCT_END(AnimatorComponent)
 // SeagullBehaviorComponent
 
 SERIALIZABLE_STRUCT_START(SeagullBehaviorComponent)
+    SERIALIZABLE_FIELD(SceneComponentId, animator)
     SERIALIZABLE_FIELD(float, flyHeight)
+    SERIALIZABLE_FIELD(uint8_t, flyHeightVarIndex)
 SERIALIZABLE_STRUCT_END(SeagullBehaviorComponent)
 
 // AgentBehaviorComponent

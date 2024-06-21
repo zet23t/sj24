@@ -1,5 +1,6 @@
 #include "AnimationConditions.h"
 #include "game/Components.h"
+#include "RuntimeContext.h"
 
 #define DEFINITIONS
 #include "raylib.h"
@@ -9,6 +10,26 @@
 #include "shared/serialization/reflection.h"
 #include "shared/serialization/serializable_structs.h"
 #undef DEFINITIONS
+
+#include <string.h>
+
+int AnimatorComponent_getVariableIndex(AnimatorComponent *component, const char *name)
+{
+    for (int i=0;i<component->variables_count;i++)
+    {
+        if (strcmp(component->variables[i].name, name) == 0)
+        {
+            return i;
+        }
+    }
+    return -1;
+}
+
+void AnimatorComponent_setVariableValue(AnimatorComponent *component, int index, float value)
+{
+    if (component == NULL || index < 0 || index >= component->variables_count) return;
+    component->variables[index].value = value;
+}
 
 void AnimatorComponent_getVariableValue(AnimatorComponent *component, Animation *animation, int index, float *value)
 {
@@ -137,6 +158,47 @@ void AnimatorComponent_update(SceneObject *sceneObject, SceneComponentId SceneCo
     }
 }
 
+void AnimatorComponent_onInitialize(SceneObject *sceneObject, SceneComponentId SceneComponent, void *componentData, void *initArg)
+{
+    AnimatorComponent *component = (AnimatorComponent *)componentData;
+    component->animationName = NULL;
+    component->currentTime = 0;
+    component->currentStateIndex = 0;
+    component->animationId = (AnimationId){0};
+    component->variables = NULL;
+    component->variables_count = 0;
+    component->variables_capacity = 0;
+    component->loopCount = 0;
+    if (initArg == NULL) return;
+    AnimatorComponent *init = (AnimatorComponent *)initArg;
+    component->animationName = RL_STRDUP(init->animationName);
+    component->animationId = init->animationId;
+    component->currentStateIndex = init->currentStateIndex;
+    component->currentTime = init->currentTime;
+    component->loopCount = init->loopCount;
+    component->variables = RL_MALLOC(sizeof(AnimationVariable) * init->variables_capacity);
+    component->variables_capacity = init->variables_capacity;
+    component->variables_count = init->variables_count;
+    for (int i=0;i<init->variables_count;i++)
+    {
+        component->variables[i] = init->variables[i];
+        component->variables[i].name = RL_STRDUP(init->variables[i].name);
+    }
+}
+
+void AnimatorComponent_onDestroy(SceneObject *sceneObject, SceneComponentId SceneComponent, void *componentData)
+{
+    AnimatorComponent *component = (AnimatorComponent *)componentData;
+    for (int i=0;i<component->variables_count;i++)
+    {
+        RL_FREE(component->variables[i].name);
+    }
+    RL_FREE(component->variables);
+    RL_FREE(component->animationName);
+}
+
 BEGIN_COMPONENT_REGISTRATION(AnimatorComponent){
     .updateTick = AnimatorComponent_update,
+    .onDestroy = AnimatorComponent_onDestroy,
+    .onInitialize = AnimatorComponent_onInitialize,
 } END_COMPONENT_REGISTRATION
