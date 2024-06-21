@@ -106,7 +106,7 @@ void AnimatorComponent_update(SceneObject *sceneObject, SceneComponentId SceneCo
 
         if (transit && transition->target >= 0 && transition->target < animation->states_count)
         {
-            printf("Transitioning from %s to %s\n", state->name, animation->states[transition->target].name);
+            // printf("Transitioning from %s to %s\n", state->name, animation->states[transition->target].name);
             component->currentStateIndex = transition->target;
             component->currentTime = 0;
         }

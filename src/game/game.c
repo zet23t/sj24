@@ -15,7 +15,6 @@ static void spawnSeagull(SceneGraph *g, Vector3 position)
 {
     SceneObjectId seagull = SceneGraph_createObject(g, "seagull");
     SceneGraph_setLocalPosition(g, seagull, position);
-    SceneGraph_addComponent(g, seagull, _componentIdMap.SeagullBehaviorComponentId, NULL);
     SceneGraph_addComponent(g, seagull, _componentIdMap.SpriteRendererComponentId,
                             &(SpriteRendererComponent){
                                 .spriteAsset = (SpriteAsset){
@@ -27,6 +26,7 @@ static void spawnSeagull(SceneGraph *g, Vector3 position)
                                 .pivot = (Vector2){0.5f, 6.0f/8.0f},
                                 .pixelsPerUnit = 16,
                                 .flip.x = GetRandomValue(0, 1) * 2.0f - 1.0f,
+                                .sortId = -(int)position.y
                             });
     AnimationManager* mgr = AnimationManager_getInstance(g);
     AnimatorVariable variables[1];
@@ -74,6 +74,7 @@ static void trySpawnGrass(SceneGraph *g, int x, int y, int type, float value, Ve
                                 .tint = WHITE,
                                 .pivot = (Vector2){0.5f, 12.0f/16.0f},
                                 .pixelsPerUnit = 16,
+                                .sortId = -(int)position.y
                             });
 }
 static void trySpawnTree(SceneGraph *g, int x, int y, int type, float value, Vector2 position)
@@ -109,6 +110,7 @@ static void trySpawnTree(SceneGraph *g, int x, int y, int type, float value, Vec
                                 .tint = WHITE,
                                 .pivot = (Vector2){0.5f, 12.0f/16.0f},
                                 .pixelsPerUnit = 16,
+                                .sortId = -(int)position.y
                             });
     // SceneGraph_addComponent(g, plant, _componentIdMap.PrimitiveRendererComponentId, &(PrimitiveRendererComponent){
     //     .primitiveType = PRIMITIVE_TYPE_CUBE,
@@ -128,7 +130,7 @@ static void trySpawnBeach(SceneGraph *g, int x, int y, int type, float value, Ve
     {
         // if (GetRandomValue(0,100) > 90)
         {
-            // spawnSeagull(g, (Vector3){position.x, position.y + 0.5f, 0.1f});
+            spawnSeagull(g, (Vector3){position.x, position.y + 0.5f, 0.1f});
         }
         return;
     }
@@ -144,6 +146,7 @@ static void trySpawnBeach(SceneGraph *g, int x, int y, int type, float value, Ve
                                 .tint = WHITE,
                                 .pivot = (Vector2){0.5f, 12.0f/16.0f},
                                 .pixelsPerUnit = 16,
+                                .sortId = -(int)position.y
                             });
 }
 
@@ -292,23 +295,29 @@ void start_gameScene(SceneGraph *g)
                                 }});
     spawnSeagull(g, (Vector3){25.0f, 0.0f, 0.1f});    
 
-    for (int y = map.height - 1; y > 0; y--)
-    for (int x = 0; x < map.width; x++)
-    {
-        int type = TileMapComponent_getTileType(&map, x, y, 0);
-        int type1 = TileMapComponent_getTileType(&map, x, y, 1);
-        int type2 = TileMapComponent_getTileType(&map, x, y, 2);
-        if (type1 != 0 || type2 != 0 || type == 0)
+    for (int y = map.height - 1; y > 0; y--) {
+        for (int x = 0; x < map.width; x++)
         {
-            continue;
+            int type = TileMapComponent_getTileType(&map, x, y, 0);
+            int type1 = TileMapComponent_getTileType(&map, x, y, 1);
+            int type2 = TileMapComponent_getTileType(&map, x, y, 2);
+            if (type1 != 0 || type2 != 0 || type == 0)
+            {
+                continue;
+            }
+            float value = values[(map.height - y - 1) * map.width + x];
+            Vector2 position = (Vector2){x - GetRandomValue(-8,8) / 16.0f, y - GetRandomValue(-8,8) / 16.0f};
+            position.x -= map.width * 0.5f;
+            position.y -= map.height * 0.5f;
+            trySpawnGrass(g, x, y, type, value, position);
+            trySpawnTree(g, x, y, type, value, position);
+            trySpawnBeach(g, x, y, type, value, position);
+            // if (SceneGraph_getComponentTypeCount(_scene, _componentIdMap.SpriteRendererComponentId) > 100)
+            // {
+            //     printf("SpriteRendererComponent count: %d\n", SceneGraph_getComponentType(_scene, _componentIdMap.SpriteRendererComponentId)->components_count);
+            //     return;
+            // }
         }
-        float value = values[(map.height - y - 1) * map.width + x];
-        Vector2 position = (Vector2){x - GetRandomValue(-8,8) / 16.0f, y - GetRandomValue(-8,8) / 16.0f};
-        position.x -= map.width * 0.5f;
-        position.y -= map.height * 0.5f;
-        trySpawnGrass(g, x, y, type, value, position);
-        trySpawnTree(g, x, y, type, value, position);
-        trySpawnBeach(g, x, y, type, value, position);
     }
 
 
