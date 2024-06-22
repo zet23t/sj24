@@ -6,6 +6,10 @@
 //     float d;
 // } Plane;
 
+// typedef struct Frustum {
+//     Plane planes[6];
+// } Frustum;
+
 // static void CalcFrustumPlanes(Camera3D camera, Plane planes[6])
 // {
 //     Matrix matView = MatrixLookAt(camera.position, camera.target, camera.up);
@@ -104,6 +108,11 @@ static int SpriteRendererComponent_drawSprite(Camera3D camera, int activeTexture
     Vector3 r = (Vector3){-m.m0 * .5f, -m.m1 * .5f, -m.m2 * .5f};
     Vector3 u = (Vector3){m.m4 * .5f, m.m5 * .5f, m.m6 * .5f};
     Vector3 p = {m.m12, m.m13, m.m14};
+    if (spriteRenderer->snapping > 0.0f)
+    {
+        p.x = (int)(p.x / spriteRenderer->snapping) * spriteRenderer->snapping;
+        p.y = (int)(p.y / spriteRenderer->snapping) * spriteRenderer->snapping;
+    }
     float pivotX = (0.5f - spriteRenderer->pivot.x) * 2.0f;
     float pivotY = (0.5f - spriteRenderer->pivot.y) * 2.0f;
     p.x -= r.x * w * pivotX + u.x * h * pivotY;
@@ -344,7 +353,7 @@ void SpriteRendererComponent_systemDraw(Camera3D camera, SceneGraph* graph, Scen
     while (!sorted)
     {
         sortingStepCount++;
-        int startA, endA, startB, endB;
+        int startA = 0, endA = 0, startB = 0, endB = 0;
         int k = 0;
         // debug code
         for (int i=0;i<componentCount;i++)
@@ -466,6 +475,8 @@ void SpriteRendererComponent_systemDraw(Camera3D camera, SceneGraph* graph, Scen
     // printf("\n");
     // printf("End sorting after %d loops over %d\n", sortingStepCount, componentCount);
 
+    rlDrawRenderBatchActive();
+    rlDisableDepthTest();
     int activeTexture = 0;
     for (int i = 0; i < componentCount; i++)
     {
@@ -480,6 +491,9 @@ void SpriteRendererComponent_systemDraw(Camera3D camera, SceneGraph* graph, Scen
         rlEnd();
         rlSetTexture(0);
     }
+    rlDrawRenderBatchActive();
+    rlEnableDepthTest();
+
 }
 
 void SpriteRendererComponent_onInitialize(SceneObject *sceneObject, SceneComponentId sceneComponent, void *componentData, void *initData)
