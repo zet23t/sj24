@@ -33,15 +33,16 @@ void AnimatorComponent_setVariableValue(AnimatorComponent *component, int index,
 
 void AnimatorComponent_getVariableValue(AnimatorComponent *component, Animation *animation, int index, float *value)
 {
-    if (index < 0 || index >= animation->variables_count) return;
-    *value = animation->variables[index].value;
-    const char *name = animation->variables[index].name;
+    *value = 0;
+    if (index < 0 || index >= component->variables_count) return;
+    *value = component->variables[index].value;
+    const char *name = component->variables[index].name;
     
-    for (int i=0;i<component->variables_count;i++)
+    for (int i=0;i<animation->variables_count;i++)
     {
-        if (strcmp(component->variables[i].name, name) == 0)
+        if (strcmp(animation->variables[i].name, name) == 0)
         {
-            *value = component->variables[i].value;
+            *value = animation->variables[i].value;
             break;
         }
     }
@@ -179,7 +180,7 @@ void AnimatorComponent_onInitialize(SceneObject *sceneObject, SceneComponentId S
     component->variables = RL_MALLOC(sizeof(AnimationVariable) * init->variables_capacity);
     component->variables_capacity = init->variables_capacity;
     component->variables_count = init->variables_count;
-    for (int i=0;i<init->variables_count;i++)
+    for (int i=0;i<component->variables_count;i++)
     {
         component->variables[i] = init->variables[i];
         component->variables[i].name = RL_STRDUP(init->variables[i].name);
