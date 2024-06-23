@@ -35,7 +35,6 @@ void AnimatorComponent_getVariableValue(AnimatorComponent *component, Animation 
 {
     *value = 0;
     if (index < 0 || index >= component->variables_count) return;
-    *value = component->variables[index].value;
     const char *name = component->variables[index].name;
     
     for (int i=0;i<animation->variables_count;i++)
@@ -46,6 +45,7 @@ void AnimatorComponent_getVariableValue(AnimatorComponent *component, Animation 
             break;
         }
     }
+    *value = component->variables[index].value;
 }
 
 void AnimatorComponent_update(SceneObject *sceneObject, SceneComponentId SceneComponent,

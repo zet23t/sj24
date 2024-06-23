@@ -1,5 +1,6 @@
 #define DEFINITIONS
 #include "game/Components.h"
+#include "shared/scene_graph/scene_graph.h"
 #include "shared/serialization/serializable_structs.h"
 #include "g.h"
 #include "components/camera_component.h"
@@ -13,14 +14,18 @@
 
 static void spawnSeagull(SceneGraph *g, Vector3 position)
 {
+    // printf("Spawning seagull at %.2f %.2f %.2f\n", position.x, position.y, position.z);
     SceneObjectId seagull = SceneGraph_createObject(g, "seagull");
     SceneGraph_setLocalPosition(g, seagull, position);
-    SceneGraph_addComponent(g, seagull, _componentIdMap.SpriteRendererComponentId,
+    SceneObjectId seagullSprite = SceneGraph_createObject(g, "sprite");
+    SceneGraph_setParent(g, seagullSprite, seagull);
+    SceneGraph_addComponent(g, seagullSprite, _componentIdMap.SpriteRendererComponentId,
                             &(SpriteRendererComponent){
                                 .spriteAsset = (SpriteAsset){
                                     .texture = _spriteSheet,
                                     .source = (Rectangle){.x = 0, .y = 656, .width = 8, .height = 8},
                                 },
+                                .snapping = 1.0f/16.0f,
                                 .size = (Vector2){0.5f, 0.5f},
                                 .tint = WHITE,
                                 .pivot = (Vector2){0.5f, 6.0f/8.0f},
@@ -29,23 +34,46 @@ static void spawnSeagull(SceneGraph *g, Vector3 position)
                                 .sortId = -(int)position.y
                             });
     AnimationManager* mgr = AnimationManager_getInstance(g);
-    AnimatorVariable variables[1];
+    AnimatorVariable variables[2];
     variables[0].name = "flyHeight";
     variables[0].value = 0.0f;
+    variables[1].name = "onWater";
+    variables[1].value = 0.0f;
     SceneGraph_addComponent(g, seagull, _componentIdMap.AnimatorComponentId, &(AnimatorComponent){
         .animationId = AnimationManager_getAnimation(mgr, "assets/seagull_animation.anim"),
         .animationName = "idle",
         .currentTime = GetRandomValue(0, 100) * 0.001f,
         .loopCount = 0,
-        .variables_capacity = 1,
-        .variables_count = 1,
+        .variables_capacity = 2,
+        .variables_count = 2,
         .variables = variables,
+    });
+
+    SceneObjectId shadow = SceneGraph_createObject(g, "shadow");
+    SceneGraph_setParent(g, shadow, seagull);
+    SceneGraph_setLocalPosition(g, shadow, (Vector3){0.0f, 0.0f, 0.0f});
+    SceneComponentId shadowComponent = SceneGraph_addComponent(g, shadow, _componentIdMap.SpriteRendererComponentId, &(SpriteRendererComponent){
+        .spriteAsset = (SpriteAsset){
+            .texture = _spriteSheet,
+            .source = (Rectangle){.x = 0, .y = 664, .width = 8, .height = 8},
+        },
+        .snapping = 1.0f/16.0f,
+        .size = (Vector2){0.5f, 0.5f},
+        .tint = WHITE,
+        .pivot = (Vector2){0.5f, 6.0f/8.0f},
+        .pixelsPerUnit = 16,
+        .flip.x = GetRandomValue(0, 1) * 2.0f - 1.0f,
+        .sortId = -10000 - (int)position.y
     });
 
     SceneGraph_addComponent(g, seagull, _componentIdMap.SeagullBehaviorComponentId, &(SeagullBehaviorComponent){
         .flyHeight = GetRandomValue(0, 10000) * 0.0001f,
+        .shadow = shadowComponent,
+        .sprite = seagullSprite,
+        .time = GetRandomValue(0, 10000) * 0.001f,
     });
 
+    // printf("Seagull created\n");
 
     // SceneGraph_addComponent(g, seagull, _componentIdMap.PrimitiveRendererComponentId, &(PrimitiveRendererComponent){
     //     .primitiveType = PRIMITIVE_TYPE_CUBE,
@@ -74,7 +102,7 @@ static void trySpawnGrass(SceneGraph *g, int x, int y, int type, float value, Ve
                                 .tint = WHITE,
                                 .pivot = (Vector2){0.5f, 12.0f/16.0f},
                                 .pixelsPerUnit = 16,
-                                .sortId = -(int)position.y
+                                .sortId = -(int)position.y - 18
                             });
 }
 static void trySpawnTree(SceneGraph *g, int x, int y, int type, float value, Vector2 position)
@@ -128,7 +156,7 @@ static void trySpawnBeach(SceneGraph *g, int x, int y, int type, float value, Ve
     }
     else if (GetRandomValue(0, 100) > 20 + (value-BEACH_START)/(BEACH_END-BEACH_START) * 50.0f)
     {
-        // if (GetRandomValue(0,100) > 90)
+        if (GetRandomValue(0,100) > 90)
         {
             spawnSeagull(g, (Vector3){position.x, position.y + 0.5f, 0.1f});
         }
@@ -146,7 +174,7 @@ static void trySpawnBeach(SceneGraph *g, int x, int y, int type, float value, Ve
                                 .tint = WHITE,
                                 .pivot = (Vector2){0.5f, 12.0f/16.0f},
                                 .pixelsPerUnit = 16,
-                                .sortId = -(int)position.y
+                                .sortId = -(int)position.y - 3
                             });
 }
 
@@ -268,8 +296,8 @@ void start_gameScene(SceneGraph *g)
             {
                 continue;
             }
-            float absDx = fabsf(dx);
-            float absDy = fabsf(dy);
+            // float absDx = fabsf(dx);
+            // float absDy = fabsf(dy);
             data[i00 * 3 + 2] = dx < 0.0f ? 12 : 13;
             data[i00 * 3 + 1] = dy < 0.0f ? 10 : 11;
         }
@@ -293,6 +321,8 @@ void start_gameScene(SceneGraph *g)
                                     .near = 1.0f,
                                     .far = 64.0f,
                                 }});
+
+    printf("Creating world objects\n");
     spawnSeagull(g, (Vector3){25.0f, 0.0f, 0.1f});    
 
     for (int y = map.height - 1; y > 0; y--) {

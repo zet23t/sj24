@@ -1,6 +1,7 @@
 {
     "variables": {
-        "flyHeight": {"value": 0.0 }
+        "flyHeight": {"value": 0.0 },
+        "onWater": {"value": 0.0 }
     },
     "states": [
         {
@@ -12,7 +13,23 @@
                     "conditions": [
                         {
                             "a": "flyHeight",
-                            "b": 0.25,
+                            "b": 0.05,
+                            "condition": ">"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "idle_water",
+            "sequence": [ "idle_water" ],
+            "transitions": [
+                {
+                    "target": "flying",
+                    "conditions": [
+                        {
+                            "a": "flyHeight",
+                            "b": 0.05,
                             "condition": ">"
                         }
                     ]
@@ -28,8 +45,28 @@
                     "conditions": [
                         {
                             "a": "flyHeight",
-                            "b": 0.25,
+                            "b": 0.05,
                             "condition": "<="
+                        },
+                        {
+                            "a": "onWater",
+                            "b": 0.5,
+                            "condition": "<="
+                        }
+                    ]
+                },
+                {
+                    "target": "idle_water",
+                    "conditions": [
+                        {
+                            "a": "flyHeight",
+                            "b": 0.05,
+                            "condition": "<="
+                        },
+                        {
+                            "a": "onWater",
+                            "b": 0.5,
+                            "condition": ">"
                         }
                     ]
                 }
@@ -41,7 +78,7 @@
             "name": "flying",
             "duration": 0.3,
             "tracks": {
-                "#SpriteRendererComponent.spriteAsset.source.x":{
+                "sprite#SpriteRendererComponent.spriteAsset.source.x":{
                     "time": [
                         0, 0.15
                     ],
@@ -55,13 +92,28 @@
             "name": "idle",
             "duration": 3.8,
             "tracks": {
-                "#SpriteRendererComponent.spriteAsset.source.x":{
+                "sprite#SpriteRendererComponent.spriteAsset.source.x":{
                     "time": [
                         0, 0.8, 1.5, 2,
                         2.5,3, 3.3],
                     "value": [
                         0, 8, 0, 16, 
                         8, 24, 8]
+                }
+
+            }
+        },
+        {
+            "name": "idle_water",
+            "duration": 3.8,
+            "tracks": {
+                "sprite#SpriteRendererComponent.spriteAsset.source.x":{
+                    "time": [
+                        0, 0.8, 1.5, 2,
+                        2.5,3, 3.3],
+                    "value": [
+                        64, 72, 64, 80, 
+                        72, 88, 72]
                 }
 
             }
