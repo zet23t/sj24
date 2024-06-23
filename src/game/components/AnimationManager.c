@@ -2,6 +2,125 @@
 #include "AnimationConditions.h"
 #include <external/cjson.h>
 
+
+static void PrintIndent(int indent) {
+    for (int i=0;i<indent;i++) printf("  ");
+}
+
+void Print_float(int indent, const char *key, float* obj) {
+    PrintIndent(indent);
+    printf("%s (float): %f\n", key, *obj);
+}
+
+void Print_int(int indent, const char *key, int* obj) {
+    PrintIndent(indent);
+    printf("%s (int): %d\n", key, *obj);
+}
+
+void Print_int8_t(int indent, const char *key, int8_t* obj) {
+    PrintIndent(indent);
+    printf("%s (int8_t): %d\n", key, *obj);
+}
+
+void Print_char(int indent, const char *key, char* obj) {
+    PrintIndent(indent);
+    printf("%s (char): %c\n", key, *obj);
+}
+
+void Print_int16_t(int indent, const char *key, int16_t* obj) {
+    PrintIndent(indent);
+    printf("%s (int16_t): %d\n", key, *obj);
+}
+
+void Print_int32_t(int indent, const char *key, int32_t* obj) {
+    PrintIndent(indent);
+    printf("%s (int32_t): %d\n", key, *obj);
+}
+
+void Print_int64_t(int indent, const char *key, int64_t* obj) {
+    PrintIndent(indent);
+    printf("%s (int64_t): %lld\n", key, *obj);
+}
+
+void Print_uint8_t(int indent, const char *key, uint8_t* obj) {
+    PrintIndent(indent);
+    printf("%s (uint8_t): %u\n", key, *obj);
+}
+
+void Print_uint16_t(int indent, const char *key, uint16_t* obj) {
+    PrintIndent(indent);
+    printf("%s (uint16_t): %u\n", key, *obj);
+}
+
+void Print_uint32_t(int indent, const char *key, uint32_t* obj) {
+    PrintIndent(indent);
+    printf("%s (uint32_t): %u\n", key, *obj);
+}
+
+void Print_uint64_t(int indent, const char *key, uint64_t* obj) {
+    PrintIndent(indent);
+    printf("%s (uint64_t): %llu\n", key, *obj);
+}
+
+void Print_bool(int indent, const char *key, bool* obj) {
+    PrintIndent(indent);
+    printf("%s (bool): %s\n", key, *obj ? "true" : "false");
+}
+
+void Print_Vector2(int indent, const char *key, Vector2* obj) {
+    PrintIndent(indent);
+    printf("%s (Vector2): { x: %f, y: %f }\n", key, obj->x, obj->y);
+}
+
+void Print_Vector3(int indent, const char *key, Vector3* obj) {
+    PrintIndent(indent);
+    printf("%s (Vector3): { x: %f, y: %f, z: %f }\n", key, obj->x, obj->y, obj->z);
+}
+
+void Print_Vector4(int indent, const char *key, Vector4* obj) {
+    PrintIndent(indent);
+    printf("%s (Vector4): { x: %f, y: %f, z: %f, w: %f }\n", key, obj->x, obj->y, obj->z, obj->w);
+}
+
+void Print_Rectangle(int indent, const char *key, Rectangle* obj) {
+    PrintIndent(indent);
+    printf("%s (Rectangle): { x: %f, y: %f, width: %f, height: %f }\n", key, obj->x, obj->y, obj->width, obj->height);
+}
+
+void Print_Color(int indent, const char *key, Color* obj) {
+    PrintIndent(indent);
+    printf("%s (Color): { r: %d, g: %d, b: %d, a: %d }\n", key, obj->r, obj->g, obj->b, obj->a);
+}
+
+void Print_size_t(int indent, const char *key, size_t* obj) {
+    PrintIndent(indent);
+    printf("%s (size_t): %llu\n", key, *obj);
+}
+
+#include "shared/serialization/undef_serialization_macros.h"
+
+#define SERIALIZABLE_STRUCT_START(name) void Print_##name(int indent, const char *key, name* obj) {\
+    PrintIndent(indent++);\
+    printf("%s: {\n", key);
+    #define SERIALIZABLE_FIELD(type, name) Print_##type(indent, #name, &obj->name);
+    #define SERIALIZABLE_FIXED_ARRAY(type, name, count) \
+        PrintIndent(indent); printf(#name "[%d](" #type "):\n", count); \
+        for (int i=0;i<count;i++) Print_##type(indent, #name, &obj->name[i]);
+    #define SERIALIZABLE_CSTR(name) PrintIndent(indent); printf(#name " (cstr): %s\n", obj->name);
+    #define SERIALIZABLE_STRUCT_LIST_ELEMENT(type, name) \
+        PrintIndent(indent); printf(#name "[%d](" #type "): [\n", obj->name##_count); \
+        for (int i=0;i<obj->name##_count;i++) {\
+            char name[256];\
+            sprintf(name, "%s[%d]", #name, i);\
+            Print_##type(indent + 1, name, &obj->name[i]);\
+        } \
+        PrintIndent(indent); printf("]\n");
+#define SERIALIZABLE_STRUCT_END(name) PrintIndent(indent); printf("}\n"); }
+#include "shared/serialization/define_serialization_macros.h"
+#include "shared/serialization/serializable_file_headers.h"
+
+
+
 AnimationManager *AnimationManager_getInstance(SceneGraph *sceneGraph)
 {
     AnimationManager *animationManager;
