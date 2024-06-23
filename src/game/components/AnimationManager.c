@@ -288,7 +288,7 @@ const char* cJSON_TypeName(int type)
     }
 }
 
-int Animation_parseCondition(Animation *animation, float *varValue, int *varIndex, cJSON* var)
+int Animation_parseCondition(Animation *animation, float *varValue, int8_t *varIndex, cJSON* var)
 {
     if (cJSON_IsNumber(var))
     {
@@ -302,7 +302,7 @@ int Animation_parseCondition(Animation *animation, float *varValue, int *varInde
         {
             if (strcmp(animation->variables[l].name, var->valuestring) == 0)
             {
-                *varIndex = l;
+                *varIndex = (int8_t)l;
                 return 0;
             }
         }
@@ -335,7 +335,7 @@ static int Animation_loadStates(Animation *animation, cJSON *states)
             .name = RL_STRDUP(name),
             .clipSequence = RL_MALLOC(sizeof(int) * clipSequenceCount),
             .clipSequence_capacity = clipSequenceCount,
-            .transitions = RL_MALLOC(sizeof(AnimationCondition) * transitionsCount),
+            .transitions = RL_MALLOC(sizeof(AnimationStateTransition) * transitionsCount),
             .transitions_capacity = transitionsCount,
         };
         animation->states[i] = animationState;
@@ -455,6 +455,7 @@ static int Animation_loadStates(Animation *animation, cJSON *states)
 
 void Animation_load(Animation *animation)
 {
+    Animation_cleanup(animation);
     printf("Loading Spritesheet Animation: %s\n", animation->filename);
 
     char *content = ResourceManager_loadText(_resourceManager, animation->filename);
