@@ -60,16 +60,16 @@ TileTypeSpriteLocation tileTypeSpriteLocations[] = {
     // 1 1
     {1, 1, 1, 0}};
 
-static int ReadInteger(const char *content, int *index)
-{
-    int result = 0;
-    while (content[*index] >= '0' && content[*index] <= '9')
-    {
-        result = result * 10 + content[*index] - '0';
-        (*index)++;
-    }
-    return result;
-}
+// static int ReadInteger(const char *content, int *index)
+// {
+//     int result = 0;
+//     while (content[*index] >= '0' && content[*index] <= '9')
+//     {
+//         result = result * 10 + content[*index] - '0';
+//         (*index)++;
+//     }
+//     return result;
+// }
 
 static int fast_rand(int seed) {
     seed = (214013*seed+2531011);
@@ -83,204 +83,204 @@ int GetLocationRandom(int x, int y, int z, int max)
     return fast_rand(seed) % (max + 1);
 }
 
-static int TryReadInteger(const char *content, int *index, int *result)
-{
-    while (content[*index] && content[*index] <= ' ' && content[*index] != '\n')
-        (*index)++;
-    if (content[*index] >= '0' && content[*index] <= '9')
-    {
-        *result = ReadInteger(content, index);
-        return 1;
-    }
-    return 0;
-}
+// static int TryReadInteger(const char *content, int *index, int *result)
+// {
+//     while (content[*index] && content[*index] <= ' ' && content[*index] != '\n')
+//         (*index)++;
+//     if (content[*index] >= '0' && content[*index] <= '9')
+//     {
+//         *result = ReadInteger(content, index);
+//         return 1;
+//     }
+//     return 0;
+// }
 
-static int GetLineNumber(const char *content, int at)
-{
-    int line = 1;
-    for (int i = 0; i < at && content[i]; i++)
-    {
-        if (content[i] == '\n')
-            line++;
-    }
-    return line;
-}
+// static int GetLineNumber(const char *content, int at)
+// {
+//     int line = 1;
+//     for (int i = 0; i < at && content[i]; i++)
+//     {
+//         if (content[i] == '\n')
+//             line++;
+//     }
+//     return line;
+// }
 
-static int LogError(const char *message, const char *content, int at)
-{
-    TraceLog(LOG_WARNING, "%s @ %d", message, GetLineNumber(content, at));
-    return 0;
-}
+// static int LogError(const char *message, const char *content, int at)
+// {
+//     TraceLog(LOG_WARNING, "%s @ %d", message, GetLineNumber(content, at));
+//     return 0;
+// }
 
-static int TileDataChunk_parse(TileDataChunk *chunk, const char *content, int *index)
-{
-    TraceLog(LOG_INFO, "Parsing chunk");
-    *index += 1;
-    if (!TryReadInteger(content, index, &chunk->x))
-        return LogError("Failed to read chunk x", content, *index);
+// static int TileDataChunk_parse(TileDataChunk *chunk, const char *content, int *index)
+// {
+//     TraceLog(LOG_INFO, "Parsing chunk");
+//     *index += 1;
+//     if (!TryReadInteger(content, index, &chunk->x))
+//         return LogError("Failed to read chunk x", content, *index);
 
-    if (!TryReadInteger(content, index, &chunk->y))
-        return LogError("Failed to read chunk y", content, *index);
+//     if (!TryReadInteger(content, index, &chunk->y))
+//         return LogError("Failed to read chunk y", content, *index);
 
-    int width = 0;
-    int numbersInLineCount = 0;
-    int isNewLine = 1;
-    int layerCount = 0;
-    int posY[26] = {0};
-    int layer = 0;
+//     int width = 0;
+//     int numbersInLineCount = 0;
+//     int isNewLine = 1;
+//     int layerCount = 0;
+//     int posY[26] = {0};
+//     int layer = 0;
 
-    int i = *index;
-    while (content[i])
-    {
-        while (content[i] && content[i] <= ' ' && content[i] != '\n')
-            i++;
+//     int i = *index;
+//     while (content[i])
+//     {
+//         while (content[i] && content[i] <= ' ' && content[i] != '\n')
+//             i++;
 
-        if (content[i] == '\n')
-        {
-            if (numbersInLineCount > 0)
-            {
-                if (width == 0)
-                    width = numbersInLineCount;
-                else if (width != numbersInLineCount)
-                {
-                    return LogError("Tilemap width mismatch", content, i);
-                }
+//         if (content[i] == '\n')
+//         {
+//             if (numbersInLineCount > 0)
+//             {
+//                 if (width == 0)
+//                     width = numbersInLineCount;
+//                 else if (width != numbersInLineCount)
+//                 {
+//                     return LogError("Tilemap width mismatch", content, i);
+//                 }
 
-                posY[layer]++;
-            }
-            numbersInLineCount = 0;
-            isNewLine = 1;
-            i++;
-            continue;
-        }
+//                 posY[layer]++;
+//             }
+//             numbersInLineCount = 0;
+//             isNewLine = 1;
+//             i++;
+//             continue;
+//         }
 
-        char chr = content[i];
-        if (chr == '#')
-        {
-            while (content[i] && content[i] != '\n')
-                i++;
-            continue;
-        }
-        if (content[i] == '>' && isNewLine)
-        {
-            break;
-        }
-        if (content[i] >= '0' && content[i] <= '9')
-        {
-            int id;
-            if (!TryReadInteger(content, &i, &id))
-                return LogError("Failed to read tile id", content, i);
-            numbersInLineCount++;
-            continue;
-        }
-        if (content[i] >= 'A' && content[i] <= 'Z' && isNewLine)
-        {
-            int layerIndex = content[i] - 'A';
-            layerCount = (layerIndex + 1 > layerCount) ? layerIndex + 1 : layerCount;
-            isNewLine = 0;
-            layer = layerIndex;
-            i++;
-        }
+//         char chr = content[i];
+//         if (chr == '#')
+//         {
+//             while (content[i] && content[i] != '\n')
+//                 i++;
+//             continue;
+//         }
+//         if (content[i] == '>' && isNewLine)
+//         {
+//             break;
+//         }
+//         if (content[i] >= '0' && content[i] <= '9')
+//         {
+//             int id;
+//             if (!TryReadInteger(content, &i, &id))
+//                 return LogError("Failed to read tile id", content, i);
+//             numbersInLineCount++;
+//             continue;
+//         }
+//         if (content[i] >= 'A' && content[i] <= 'Z' && isNewLine)
+//         {
+//             int layerIndex = content[i] - 'A';
+//             layerCount = (layerIndex + 1 > layerCount) ? layerIndex + 1 : layerCount;
+//             isNewLine = 0;
+//             layer = layerIndex;
+//             i++;
+//         }
 
-        if (content[i] == '#')
-        {
-            while (content[i] && content[i] != '\n')
-                i++;
-        }
-    }
+//         if (content[i] == '#')
+//         {
+//             while (content[i] && content[i] != '\n')
+//                 i++;
+//         }
+//     }
 
-    if (width == 0)
-    {
-        TraceLog(LOG_WARNING, "chunk width is 0");
-        chunk->data = NULL;
-        return 0;
-    }
+//     if (width == 0)
+//     {
+//         TraceLog(LOG_WARNING, "chunk width is 0");
+//         chunk->data = NULL;
+//         return 0;
+//     }
 
-    if (chunk->data)
-    {
-        MemFree(chunk->data);
-    }
-    int maxY = 0;
-    for (int i = 0; i < layerCount; i++)
-    {
-        if (posY[i] > maxY)
-            maxY = posY[i];
-        posY[i] = 0;
-    }
-    int height = maxY + 1;
-    chunk->width = width;
-    chunk->height = height;
-    chunk->layerCount = layerCount;
-    chunk->data = MemAlloc(sizeof(unsigned char) * width * height * layerCount);
-    for (int i = 0; i < width * height * layerCount; i++)
-        chunk->data[i] = 0;
+//     if (chunk->data)
+//     {
+//         MemFree(chunk->data);
+//     }
+//     int maxY = 0;
+//     for (int i = 0; i < layerCount; i++)
+//     {
+//         if (posY[i] > maxY)
+//             maxY = posY[i];
+//         posY[i] = 0;
+//     }
+//     int height = maxY + 1;
+//     chunk->width = width;
+//     chunk->height = height;
+//     chunk->layerCount = layerCount;
+//     chunk->data = MemAlloc(sizeof(unsigned char) * width * height * layerCount);
+//     for (int i = 0; i < width * height * layerCount; i++)
+//         chunk->data[i] = 0;
 
-    TraceLog(LOG_INFO, "Reading chunk data, width: %d, height: %d, layerCount: %d", width, height, layerCount);
-    numbersInLineCount = 0;
-    isNewLine = 1;
-    layer = 0;
-    i = *index;
-    while (content[i])
-    {
-        if (content[i] == '\n')
-        {
-            if (numbersInLineCount > 0)
-            {
-                posY[layer]++;
-            }
+//     TraceLog(LOG_INFO, "Reading chunk data, width: %d, height: %d, layerCount: %d", width, height, layerCount);
+//     numbersInLineCount = 0;
+//     isNewLine = 1;
+//     layer = 0;
+//     i = *index;
+//     while (content[i])
+//     {
+//         if (content[i] == '\n')
+//         {
+//             if (numbersInLineCount > 0)
+//             {
+//                 posY[layer]++;
+//             }
 
-            numbersInLineCount = 0;
-            isNewLine = 1;
-            i++;
-            continue;
-        }
+//             numbersInLineCount = 0;
+//             isNewLine = 1;
+//             i++;
+//             continue;
+//         }
 
-        if (content[i] == '>' && isNewLine)
-        {
-            break;
-        }
+//         if (content[i] == '>' && isNewLine)
+//         {
+//             break;
+//         }
 
-        if (content[i] >= '0' && content[i] <= '9')
-        {
-            int id = 0;
-            if (!TryReadInteger(content, &i, &id))
-                return LogError("Failed to read tile id", content, i);
+//         if (content[i] >= '0' && content[i] <= '9')
+//         {
+//             int id = 0;
+//             if (!TryReadInteger(content, &i, &id))
+//                 return LogError("Failed to read tile id", content, i);
 
-            int pos = numbersInLineCount * layerCount + layer;
-            chunk->data[posY[layer] * width * layerCount + pos] = id;
-            numbersInLineCount++;
-            isNewLine = 0;
-            continue;
-        }
+//             int pos = numbersInLineCount * layerCount + layer;
+//             chunk->data[posY[layer] * width * layerCount + pos] = id;
+//             numbersInLineCount++;
+//             isNewLine = 0;
+//             continue;
+//         }
 
-        if (content[i] >= 'A' && content[i] <= 'Z')
-        {
-            if (!isNewLine)
-            {
-                return LogError("Layer declaration must be on a new line", content, i);
-            }
-            layer = content[i] - 'A';
-            isNewLine = 0;
-            i++;
-            continue;
-        }
+//         if (content[i] >= 'A' && content[i] <= 'Z')
+//         {
+//             if (!isNewLine)
+//             {
+//                 return LogError("Layer declaration must be on a new line", content, i);
+//             }
+//             layer = content[i] - 'A';
+//             isNewLine = 0;
+//             i++;
+//             continue;
+//         }
 
-        if (content[i] == '#')
-        {
-            while (content[i] && content[i] != '\n')
-                i++;
-            continue;
-        }
+//         if (content[i] == '#')
+//         {
+//             while (content[i] && content[i] != '\n')
+//                 i++;
+//             continue;
+//         }
 
-        i++;
-    }
+//         i++;
+//     }
 
-    TraceLog(LOG_INFO, "Chunk data reading finished");
+//     TraceLog(LOG_INFO, "Chunk data reading finished");
 
-    *index = i;
+//     *index = i;
 
-    return 1;
-}
+//     return 1;
+// }
 
 // void Tilemap_parse(Tilemap *tilemap, const char *content)
 // {
@@ -580,12 +580,25 @@ int TileMapComponent_getTileType(TileMapComponent *TileMapComponent, int tileX, 
     return 0;
 }
 
+int TileMapComponent_getTileTypeAtWorldPosition(SceneGraph *graph, SceneObjectId sceneObjectId, SceneComponentId sceneComponent, TileMapComponent *TileMapComponent, Vector3 position, int layer)
+{
+    SceneObject *sceneObject = SceneGraph_getObject(graph, sceneObjectId);
+    if (sceneObject == NULL)
+        return 0;
+    
+    Matrix inv = SceneObject_getToLocalMatrix(sceneObject);
+    Vector3 localPosition = Vector3Transform(position, inv);
+    int tileX = (int)(localPosition.x / TileMapComponent->tileWidth);
+    int tileY = (int)(localPosition.y / TileMapComponent->tileHeight);
+    return TileMapComponent_getTileType(TileMapComponent, tileX, tileY, layer);
+}
+
 static void TileMapComponent_draw(Camera3D camera, SceneObject *sceneObject, SceneComponentId sceneComponent,
                                   void *componentData, void *userdata)
 {
     TileMapComponent *tileMapComponent = (TileMapComponent *)componentData;
     Matrix m = SceneObject_getWorldMatrix(sceneObject);
-    Matrix camM = GetCameraMatrix(camera);
+    // Matrix camM = GetCameraMatrix(camera);
 
     rlSetTexture(tileMapComponent->tileset.id);
 

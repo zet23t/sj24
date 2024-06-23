@@ -2,6 +2,30 @@
 #include "shared/serialization/struct_macros.h"
 #endif
 
+// TileMapComponent
+
+SERIALIZABLE_STRUCT_START(TileDataChunk)
+    SERIALIZABLE_FIELD(int, x)
+    SERIALIZABLE_FIELD(int, y)
+    SERIALIZABLE_FIELD(int, width)
+    SERIALIZABLE_FIELD(int, height)
+    SERIALIZABLE_FIELD(int, layerCount)
+    NONSERIALIZED_FIELD(unsigned char*, data)
+SERIALIZABLE_STRUCT_END(TileDataChunk)
+
+SERIALIZABLE_STRUCT_START(TileMapComponent)
+    SERIALIZABLE_FIELD(int, tileWidth)
+    SERIALIZABLE_FIELD(int, tileHeight)
+    SERIALIZABLE_FIELD(int, width)
+    SERIALIZABLE_FIELD(int, height)
+    SERIALIZABLE_FIELD(int, layerCount)
+    NONSERIALIZED_FIELD(TileDataChunk*, chunks)
+    NONSERIALIZED_FIELD(int, chunkCount)
+    NONSERIALIZED_FIELD(Texture2D, tileset)
+    NONSERIALIZED_FIELD(Mesh, mesh)
+    NONSERIALIZED_FIELD(Material, material)
+SERIALIZABLE_STRUCT_END(TileMapComponent)
+
 // AnimationManager
 
 SERIALIZABLE_STRUCT_START(AnimationKey)
@@ -80,15 +104,6 @@ SERIALIZABLE_STRUCT_START(AnimatorComponent)
     SERIALIZABLE_STRUCT_LIST_ELEMENT(AnimatorVariable, variables)
 SERIALIZABLE_STRUCT_END(AnimatorComponent)
 
-// SeagullBehaviorComponent
-
-SERIALIZABLE_STRUCT_START(SeagullBehaviorComponent)
-    SERIALIZABLE_FIELD(SceneComponentId, animator)
-    SERIALIZABLE_FIELD(float, flyHeight)
-    SERIALIZABLE_FIELD(float, time)
-    SERIALIZABLE_FIELD(uint8_t, flyHeightVarIndex)
-SERIALIZABLE_STRUCT_END(SeagullBehaviorComponent)
-
 // AgentBehaviorComponent
 
 SERIALIZABLE_STRUCT_START(AgentBehaviorComponent)
@@ -111,6 +126,22 @@ SERIALIZABLE_STRUCT_START(SpriteRendererComponent)
     SERIALIZABLE_FIELD(Color, tint)
     SERIALIZABLE_FIELD(Vector2, pivot)
     SERIALIZABLE_FIELD(float, pixelsPerUnit)
+    SERIALIZABLE_FIELD(float, snapping)
     SERIALIZABLE_FIELD(Vector2, size)
     SERIALIZABLE_FIELD(Vector2, flip)
 SERIALIZABLE_STRUCT_END(SpriteRendererComponent)
+
+// SeagullBehaviorComponent
+
+SERIALIZABLE_STRUCT_START(SeagullBehaviorComponent)
+    SERIALIZABLE_FIELD(SceneComponentId, animator)
+    SERIALIZABLE_FIELD(SceneObjectId, sprite)
+    SERIALIZABLE_FIELD(SceneComponentId, shadow)
+    SERIALIZABLE_FIELD(float, flyHeight)
+    SERIALIZABLE_FIELD(float, time)
+    SERIALIZABLE_FIELD(float, nextDecisionTime)
+    SERIALIZABLE_FIELD(Vector2, moveTarget)
+    SERIALIZABLE_FIELD(uint8_t, flyHeightVarIndex)
+    SERIALIZABLE_FIELD(uint8_t, onWaterVarIndex)
+SERIALIZABLE_STRUCT_END(SeagullBehaviorComponent)
+
