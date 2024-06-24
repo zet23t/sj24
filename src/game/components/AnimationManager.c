@@ -1,7 +1,7 @@
 #include "game/g.h"
 #include "AnimationConditions.h"
 #include <external/cjson.h>
-
+#include <stdlib.h>
 
 static void PrintIndent(int indent) {
     for (int i=0;i<indent;i++) printf("  ");
@@ -332,7 +332,7 @@ static int Animation_loadClips(Animation* animation, cJSON* clips)
         AnimationClip animationClip = {
             .name = RL_STRDUP(name),
             .duration = duration,
-            .tracks = RL_MALLOC(sizeof(AnimationTrack) * trackCount),
+            .tracks = STRUCT_MALLOC(AnimationTrack, trackCount),
             .tracks_count = trackCount,
         };
         animation->clips[i] = animationClip;
@@ -353,7 +353,7 @@ static int Animation_loadClips(Animation* animation, cJSON* clips)
             int count = keyCount < valueCount ? keyCount : valueCount;
             AnimationTrack animationTrack = {
                 .path = RL_STRDUP(trackPath),
-                .keys = RL_MALLOC(sizeof(AnimationKey) * count),
+                .keys = STRUCT_MALLOC(AnimationKey, count),
                 .keys_count = count,
                 .keys_capacity = count,
             };
@@ -452,9 +452,9 @@ static int Animation_loadStates(Animation *animation, cJSON *states)
         int transitionsCount = cJSON_GetArraySize(transitions);
         AnimationState animationState = {
             .name = RL_STRDUP(name),
-            .clipSequence = RL_MALLOC(sizeof(int) * clipSequenceCount),
+            .clipSequence = STRUCT_MALLOC(uint16_t, clipSequenceCount),
             .clipSequence_capacity = clipSequenceCount,
-            .transitions = RL_MALLOC(sizeof(AnimationStateTransition) * transitionsCount),
+            .transitions = STRUCT_MALLOC(AnimationStateTransition, transitionsCount),
             .transitions_capacity = transitionsCount,
         };
         animation->states[i] = animationState;
@@ -496,7 +496,7 @@ static int Animation_loadStates(Animation *animation, cJSON *states)
             int conditionsCount = cJSON_GetArraySize(conditions);
             AnimationStateTransition animationTransition = {
                 .target = 0,
-                .conditions = RL_MALLOC(sizeof(AnimationCondition) * conditionsCount),
+                .conditions = STRUCT_MALLOC(AnimationCondition, conditionsCount),
                 .conditions_capacity = conditionsCount,
                 .conditions_count = conditionsCount,
             };

@@ -1,7 +1,7 @@
 #ifndef __G_H__
-
 #define __G_H__
 
+#include "mem-util.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

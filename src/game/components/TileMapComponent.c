@@ -580,7 +580,7 @@ int TileMapComponent_getTileType(TileMapComponent *TileMapComponent, int tileX, 
     return 0;
 }
 
-int TileMapComponent_getTileTypeAtWorldPosition(SceneGraph *graph, SceneObjectId sceneObjectId, SceneComponentId sceneComponent, TileMapComponent *TileMapComponent, Vector3 position, int layer)
+int TileMapComponent_getTileTypeAtWorldPosition(SceneGraph *graph, SceneObjectId sceneObjectId, SceneComponentId sceneComponent, TileMapComponent *tileMapComponent, Vector3 position, int layer)
 {
     SceneObject *sceneObject = SceneGraph_getObject(graph, sceneObjectId);
     if (sceneObject == NULL)
@@ -588,9 +588,11 @@ int TileMapComponent_getTileTypeAtWorldPosition(SceneGraph *graph, SceneObjectId
     
     Matrix inv = SceneObject_getToLocalMatrix(sceneObject);
     Vector3 localPosition = Vector3Transform(position, inv);
-    int tileX = (int)(localPosition.x / TileMapComponent->tileWidth);
-    int tileY = (int)(localPosition.y / TileMapComponent->tileHeight);
-    return TileMapComponent_getTileType(TileMapComponent, tileX, tileY, layer);
+    int tileX = (int)(localPosition.x);
+    int tileY = tileMapComponent->height + (int)(localPosition.y);
+    int mtype = TileMapComponent_getTileType(tileMapComponent, tileX, tileY, layer);
+    // printf("tileX: %d, tileY: %d, %.1f %.1f %d\n", tileX, tileY, position.x, position.y, mtype);
+    return mtype;
 }
 
 static void TileMapComponent_draw(Camera3D camera, SceneObject *sceneObject, SceneComponentId sceneComponent,
