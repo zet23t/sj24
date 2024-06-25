@@ -461,6 +461,23 @@ void game_draw()
     BeginMode3D(camera);
     SceneGraph_draw(_scene, camera, NULL);
     SceneGraph_sequentialDraw(_scene, camera, NULL);
+    TileMapComponent *tileMap;
+    SceneComponent *tileMapComponent = SceneGraph_getComponentByType(_scene, (SceneObjectId){0}, _componentIdMap.TileMapComponentId, (void**)&tileMap, 0);
+    // if (tileMapComponent)
+    //     for (int x=0;x<tileMap->width;x++)
+    //     {
+    //         for (int y=0;y<tileMap->height;y++)
+    //         {
+    //             Vector3 worldPos = (Vector3){x - tileMap->width * 0.5f, y - tileMap->height * 0.5f, 0.0f};
+    //             int type = TileMapComponent_getTileTypeAtWorldPosition(_scene, tileMapComponent->objectId, tileMapComponent->id, tileMap, worldPos, 0);
+    //             if (type == 0)
+    //             {
+    //                 continue;
+    //             }
+    //             Vector3 position = (Vector3){x - tileMap->width * 0.5f, y - tileMap->height * 0.5f, 0.0f};
+    //             DrawCube(position, 0.20f, 0.20f, 0.20f, (Color){32 * type, 0, 0, 255});
+    //         }
+    //     }
     EndMode3D();
 
     if (IsKeyReleased(KEY_F10))

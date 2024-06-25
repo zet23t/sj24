@@ -35,7 +35,7 @@ static void SeagullBehaviorComponent_onInitialize(SceneObject *sceneObject, Scen
     }
 }
 
-static void SeagullBehaviorComponent_stateIdle(SceneObject *sceneObject, SeagullBehaviorComponent *component)
+static void SeagullBehaviorComponent_stateIdle(SceneObject *sceneObject, SeagullBehaviorComponent *component, SceneComponent *tileMapComponent, TileMapComponent *tileMap)
 {
     if (component->time < component->nextDecisionTime)
     {
@@ -45,6 +45,17 @@ static void SeagullBehaviorComponent_stateIdle(SceneObject *sceneObject, Seagull
     int index = 0;
     Vector2 target = (Vector2){GetRandomValue(-10, 10) + position.x, GetRandomValue(-10, 10) + position.y};
     float targetDistSq = Vector2DistanceSqr(target, (Vector2){position.x, position.y});
+    int n = 10; 
+    while (tileMap && n-->0)
+    {
+        int type = TileMapComponent_getTileTypeAtWorldPosition(sceneObject->graph, tileMapComponent->objectId, tileMapComponent->id, tileMap, (Vector3){target.x, target.y, 0}, 0);
+        if (type > 1)
+        {
+            break;
+        }
+        target = (Vector2){GetRandomValue(-10, 10) + position.x, GetRandomValue(-10, 10) + position.y};
+        targetDistSq = Vector2DistanceSqr(target, (Vector2){position.x, position.y});
+    }
     // find some close seagulls and pick a random one to fly towards
     while (1)
     {
@@ -79,6 +90,9 @@ static void SeagullBehaviorComponent_update(SceneObject *sceneObject, SceneCompo
                                             float delta, void *componentData)
 {
     SeagullBehaviorComponent *component = (SeagullBehaviorComponent *)componentData;
+    TileMapComponent *tileMap;
+    SceneComponent *tileMapComponent = SceneGraph_getComponentByType(sceneObject->graph, (SceneObjectId){0}, _componentIdMap.TileMapComponentId, (void**)&tileMap, 0);
+    
     component->time += delta;
 
     Vector3 position = SceneGraph_getWorldPosition(sceneObject->graph, sceneObject->id);
@@ -115,7 +129,7 @@ static void SeagullBehaviorComponent_update(SceneObject *sceneObject, SceneCompo
         }
     }
 
-    SeagullBehaviorComponent_stateIdle(sceneObject, component);
+    SeagullBehaviorComponent_stateIdle(sceneObject, component, tileMapComponent, tileMap);
 
     SceneGraph_setLocalPosition(sceneObject->graph, component->sprite, (Vector3){0.0f, component->flyHeight * 1.0f, 0.0f});
 
@@ -151,8 +165,6 @@ static void SeagullBehaviorComponent_update(SceneObject *sceneObject, SceneCompo
     AnimatorComponent_setVariableValue(animator, component->flyHeightVarIndex, component->flyHeight);
 
     float onWater = 1.0f;
-    TileMapComponent *tileMap;
-    SceneComponent *tileMapComponent = SceneGraph_getComponentByType(sceneObject->graph, (SceneObjectId){0}, _componentIdMap.TileMapComponentId, (void**)&tileMap, 0);
     if (tileMapComponent)
     {
         int type = TileMapComponent_getTileTypeAtWorldPosition(sceneObject->graph, tileMapComponent->objectId, tileMapComponent->id, tileMap, position, 0);
@@ -164,7 +176,36 @@ static void SeagullBehaviorComponent_update(SceneObject *sceneObject, SceneCompo
     AnimatorComponent_setVariableValue(animator, component->onWaterVarIndex, onWater);
 }
 
+static void SeagullBehaviorComponent_draw(Camera3D camera, SceneObject *sceneObject, SceneComponentId sceneComponent,
+                                          void *componentData, void *userdata)
+{
+    SeagullBehaviorComponent *component = (SeagullBehaviorComponent *)componentData;
+    TileMapComponent *tileMap;
+    SceneComponent *tileMapComponent = SceneGraph_getComponentByType(sceneObject->graph, (SceneObjectId){0}, _componentIdMap.TileMapComponentId, (void**)&tileMap, 0);
+    Vector2 moveTo = component->moveTarget;
+    Vector3 position = SceneGraph_getWorldPosition(sceneObject->graph, sceneObject->id);
+    Vector3 target = (Vector3){moveTo.x, moveTo.y, 0};
+    DrawLine3D(position, target, RED);
+    if (tileMap)
+    {
+        int type = TileMapComponent_getTileTypeAtWorldPosition(sceneObject->graph, tileMapComponent->objectId, tileMapComponent->id, tileMap, (Vector3){target.x, target.y, 0}, 0);
+        if (type > 1)
+        {
+            DrawCircle3D(target, 0.5f, (Vector3){0, 1, 0}, 0, GREEN);
+        }
+        else if (type == 0) {
+            DrawCircle3D(target, 0.5f, (Vector3){0, 1, 0}, 0, RED);
+        }
+        else
+        {
+            DrawCircle3D(target, 0.5f, (Vector3){0, 1, 0}, 0, BLUE);
+        }
+    }
+
+}
+
 BEGIN_COMPONENT_REGISTRATION(SeagullBehaviorComponent){
     .onInitialize = SeagullBehaviorComponent_onInitialize,
     .updateTick = SeagullBehaviorComponent_update,
+    .draw = SeagullBehaviorComponent_draw,
 } END_COMPONENT_REGISTRATION
