@@ -595,17 +595,14 @@ int TileMapComponent_getTileTypeAtWorldPosition(SceneGraph *graph, SceneObjectId
     return mtype;
 }
 
-static void TileMapComponent_draw(Camera3D camera, SceneObject *sceneObject, SceneComponentId sceneComponent,
-                                  void *componentData, void *userdata)
+static void TileMapCompoment_updateTileCache(TileMapComponent *tileMapComponent, Matrix m)
 {
-    TileMapComponent *tileMapComponent = (TileMapComponent *)componentData;
-    Matrix m = SceneObject_getWorldMatrix(sceneObject);
-    // Matrix camM = GetCameraMatrix(camera);
+    if (tileMapComponent->cacheIsUpdated)
+    {
+        return;
+    }
 
-    rlSetTexture(tileMapComponent->tileset.id);
-
-    rlBegin(RL_QUADS);
-    rlColor4ub(255,255,255,255);
+    tileMapComponent->cacheIsUpdated = true;
 
     float tw = tileMapComponent->tileset.width;
     float th = tileMapComponent->tileset.height;
@@ -639,6 +636,26 @@ static void TileMapComponent_draw(Camera3D camera, SceneObject *sceneObject, Sce
     int minX = 0;
     int maxX = width;
     int maxY = height;
+
+    int minCacheSize = (maxY - minY) * width * layerCount * (3 * 4 + 2 * 4);
+    if (minCacheSize > tileMapComponent->cachedTileCapacity)
+    {
+        tileMapComponent->cachedTileCapacity = minCacheSize;
+        tileMapComponent->cachedTiles = MemRealloc(tileMapComponent->cachedTiles, minCacheSize * sizeof(float));
+    }
+
+    tileMapComponent->cachedTileCount = 0;
+    #define WRITE(x, y, z, u, w) \
+        if (tileMapComponent->cachedTileCount + 5 >= tileMapComponent->cachedTileCapacity) \
+        {\
+            tileMapComponent->cachedTileCapacity *= 2;\
+            tileMapComponent->cachedTiles = MemRealloc(tileMapComponent->cachedTiles, tileMapComponent->cachedTileCapacity * sizeof(float)); \
+        }\
+        tileMapComponent->cachedTiles[tileMapComponent->cachedTileCount++] = x; \
+        tileMapComponent->cachedTiles[tileMapComponent->cachedTileCount++] = y; \
+        tileMapComponent->cachedTiles[tileMapComponent->cachedTileCount++] = z; \
+        tileMapComponent->cachedTiles[tileMapComponent->cachedTileCount++] = u; \
+        tileMapComponent->cachedTiles[tileMapComponent->cachedTileCount++] = w;
 
     // copy the tilemap data to the cache
     // would probably be faster to iterate over each chunk and making the intersection per chunk once
@@ -726,21 +743,22 @@ static void TileMapComponent_draw(Camera3D camera, SceneObject *sceneObject, Sce
                         tileMapComponent->tileWidth, tileMapComponent->tileHeight};
                     
                     Vector3 pos = (Vector3){m.m12 + x, m.m13 - y, m.m14};
-                    
-                    rlTexCoord2f((source.x + source.width) / tw, source.y / th);
-                    // rlTexCoord2f(1.0f, 0.0f);
-                    rlVertex3f(pos.x + 1, pos.y, pos.z);
-                    rlTexCoord2f(source.x / tw, source.y / th);
-                    // rlTexCoord2f(0.0f, 0.0f);
-                    rlVertex3f(pos.x, pos.y, pos.z);
-                    
 
-                    rlTexCoord2f(source.x / tw, (source.y + source.height) / th);
-                    // rlTexCoord2f(0.0f, 1.0f);
-                    rlVertex3f(pos.x, pos.y - 1, pos.z);
-                    rlTexCoord2f((source.x + source.width) / tw, (source.y + source.height) / th);
-                    // rlTexCoord2f(1.0f, 1.0f);
-                    rlVertex3f(pos.x + 1, pos.y - 1, pos.z);
+                    WRITE((source.x + source.width) / tw, source.y / th, pos.x + 1, pos.y, pos.z)
+                    // rlTexCoord2f((source.x + source.width) / tw, source.y / th);
+                    // rlVertex3f(pos.x + 1, pos.y, pos.z);
+                    
+                    WRITE(source.x / tw, source.y / th, pos.x, pos.y, pos.z)
+                    // rlTexCoord2f(source.x / tw, source.y / th);
+                    // rlVertex3f(pos.x, pos.y, pos.z);
+                    
+                    WRITE(source.x / tw, (source.y + source.height) / th, pos.x, pos.y - 1, pos.z)
+                    // rlTexCoord2f(source.x / tw, (source.y + source.height) / th);
+                    // rlVertex3f(pos.x, pos.y - 1, pos.z);
+                    
+                    WRITE((source.x + source.width) / tw, (source.y + source.height) / th, pos.x + 1, pos.y - 1, pos.z)
+                    // rlTexCoord2f((source.x + source.width) / tw, (source.y + source.height) / th);
+                    // rlVertex3f(pos.x + 1, pos.y - 1, pos.z);
 
                     if (hasDiagonalPattern)
                     {
@@ -751,6 +769,27 @@ static void TileMapComponent_draw(Camera3D camera, SceneObject *sceneObject, Sce
                 }
             }
         }
+    }
+}
+
+static void TileMapComponent_draw(Camera3D camera, SceneObject *sceneObject, SceneComponentId sceneComponent,
+                                  void *componentData, void *userdata)
+{
+    TileMapComponent *tileMapComponent = (TileMapComponent *)componentData;
+    Matrix m = SceneObject_getWorldMatrix(sceneObject);
+    // Matrix camM = GetCameraMatrix(camera);
+
+    TileMapCompoment_updateTileCache(tileMapComponent, m);
+
+    rlSetTexture(tileMapComponent->tileset.id);
+
+    rlBegin(RL_QUADS);
+    rlColor4ub(255,255,255,255);
+    float *data = tileMapComponent->cachedTiles;
+    for (int i=0;i<tileMapComponent->cachedTileCount;i+=5)
+    {
+        rlTexCoord2f(data[i], data[i+1]);
+        rlVertex3f(data[i+2], data[i+3], data[i+4]);
     }
 
     rlEnd();
